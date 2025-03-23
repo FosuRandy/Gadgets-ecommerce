@@ -1,0 +1,148 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ action }} Purchase Order{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 col-md-3 admin-sidebar p-0">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_products') }}">
+                            <i class="fas fa-box-open"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
+                            <i class="fas fa-shopping-cart"></i> Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_promotions') }}">
+                            <i class="fas fa-tags"></i> Promotions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_slideshow') }}">
+                            <i class="fas fa-images"></i> Slideshow
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_inventory') }}">
+                            <i class="fas fa-boxes"></i> Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_suppliers') }}">
+                            <i class="fas fa-truck"></i> Suppliers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_purchase_orders') }}">
+                            <i class="fas fa-clipboard-list"></i> Purchase Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10 col-md-9 admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>{{ action }} Purchase Order</h1>
+                <a href="{{ url_for('admin_purchase_orders') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Purchase Orders
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Purchase Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label">{{ form.supplier_id.label }}</label>
+                            <div class="col-sm-9">
+                                {{ form.supplier_id(class="form-select") }}
+                                {% if form.supplier_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.supplier_id.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label">{{ form.status.label }}</label>
+                            <div class="col-sm-9">
+                                {{ form.status(class="form-select") }}
+                                {% if form.status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.status.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    <strong>Draft:</strong> Work in progress. <strong>Ordered:</strong> Sent to supplier. <strong>Received:</strong> Items delivered. <strong>Cancelled:</strong> Order cancelled.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label">{{ form.expected_delivery_date.label }}</label>
+                            <div class="col-sm-9">
+                                {{ form.expected_delivery_date(class="form-control", type="datetime-local") }}
+                                {% if form.expected_delivery_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.expected_delivery_date.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label">{{ form.notes.label }}</label>
+                            <div class="col-sm-9">
+                                {{ form.notes(class="form-control", rows="4", placeholder="Enter any additional notes about this purchase order") }}
+                                {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.notes.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Optional: Special instructions for supplier, delivery details, etc.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end mt-4">
+                            <a href="{{ url_for('admin_purchase_orders') }}" class="btn btn-secondary me-2">Cancel</a>
+                            <button type="submit" name="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

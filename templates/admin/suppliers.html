@@ -1,0 +1,196 @@
+{% extends "layout.html" %}
+
+{% block title %}Suppliers{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 col-md-3 admin-sidebar p-0">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_products') }}">
+                            <i class="fas fa-box-open"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
+                            <i class="fas fa-shopping-cart"></i> Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_promotions') }}">
+                            <i class="fas fa-tags"></i> Promotions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_slideshow') }}">
+                            <i class="fas fa-images"></i> Slideshow
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_inventory') }}">
+                            <i class="fas fa-boxes"></i> Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_suppliers') }}">
+                            <i class="fas fa-truck"></i> Suppliers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_purchase_orders') }}">
+                            <i class="fas fa-clipboard-list"></i> Purchase Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10 col-md-9 admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Suppliers</h1>
+                <a href="{{ url_for('admin_add_supplier') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Supplier
+                </a>
+            </div>
+            
+            <!-- Suppliers Table -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Manage Suppliers</h5>
+                        <div class="input-group input-group-sm" style="width: 300px;">
+                            <input type="text" id="supplier-search" class="form-control" placeholder="Search suppliers...">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if suppliers %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="suppliers-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Contact Person</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for supplier in suppliers %}
+                                <tr>
+                                    <td>{{ supplier.name }}</td>
+                                    <td>{{ supplier.contact_name or 'N/A' }}</td>
+                                    <td>{{ supplier.email or 'N/A' }}</td>
+                                    <td>{{ supplier.phone or 'N/A' }}</td>
+                                    <td>{{ supplier.updated_at|format_date }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('admin_edit_supplier', supplier_id=supplier.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteSupplierModal" 
+                                                    data-supplier-id="{{ supplier.id }}" 
+                                                    data-supplier-name="{{ supplier.name }}">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No suppliers found. <a href="{{ url_for('admin_add_supplier') }}">Add your first supplier</a>.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Supplier Modal -->
+<div class="modal fade" id="deleteSupplierModal" tabindex="-1" aria-labelledby="deleteSupplierModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSupplierModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete supplier <strong id="supplierName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone. Any purchase orders associated with this supplier will prevent deletion.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteSupplierForm" method="POST" action="">
+                    <button type="submit" class="btn btn-danger">Delete Supplier</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('supplier-search');
+    const suppliersTable = document.getElementById('suppliers-table');
+    
+    if (searchInput && suppliersTable) {
+        const rows = suppliersTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const text = row.textContent.toLowerCase();
+                
+                if (text.indexOf(searchTerm) > -1) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    }
+    
+    // Delete supplier modal
+    const deleteSupplierModal = document.getElementById('deleteSupplierModal');
+    if (deleteSupplierModal) {
+        deleteSupplierModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const supplierId = button.getAttribute('data-supplier-id');
+            const supplierName = button.getAttribute('data-supplier-name');
+            
+            document.getElementById('supplierName').textContent = supplierName;
+            document.getElementById('deleteSupplierForm').action = '/admin/suppliers/delete/' + supplierId;
+        });
+    }
+});
+</script>
+{% endblock %}
