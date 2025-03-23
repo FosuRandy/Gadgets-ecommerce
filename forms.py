@@ -133,3 +133,11 @@ class ReceivePurchaseOrderForm(FlaskForm):
 
 class ReceiveItemForm(FlaskForm):
     quantity_received = IntegerField('Quantity Received', validators=[DataRequired(), NumberRange(min=0)])
+    
+class UserManagementForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    role = SelectField('Role', choices=[('customer', 'Customer'), ('admin', 'Administrator')], validators=[DataRequired()])
+    password = PasswordField('New Password (leave blank to keep current password)', validators=[Optional(), Length(min=6)])
+    confirm_password = PasswordField('Confirm New Password', validators=[EqualTo('password')])
+    submit = SubmitField('Save Changes')
