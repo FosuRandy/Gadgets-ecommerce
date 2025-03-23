@@ -299,6 +299,7 @@ def register_routes(app):
                 shipping_phone=form.phone.data
             )
             db.session.add(order)
+            db.session.flush()  # Flush to get the order.id without committing
             
             # Add order items
             for cart_item in cart_items:
@@ -315,7 +316,7 @@ def register_routes(app):
                 product = cart_item.product
                 product.stock -= cart_item.quantity
             
-            # Save order to get the ID
+            # Save everything
             db.session.commit()
             
             # Store order info in session for payment page
