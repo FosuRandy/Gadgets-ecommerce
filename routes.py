@@ -80,7 +80,7 @@ def register_routes(app):
             
             login_user(user, remember=form.remember.data)
             next_page = request.args.get('next')
-            if not next_page or url_parse(next_page).netloc != '':
+            if not next_page or urlparse(next_page).netloc != '':
                 if user.is_admin():
                     next_page = url_for('admin_dashboard')
                 else:
