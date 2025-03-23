@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">All Products</h1>
+    
+    <!-- Filters and Search -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="d-flex">
+                <select id="category-filter" class="form-select me-2">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <a href="{{ url_for('products') }}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <form method="GET" action="{{ url_for('products') }}" class="d-flex">
+                <input type="text" name="search" class="form-control me-2" placeholder="Search products..." value="{{ search_query or '' }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Products Grid -->
+    <div class="row g-4">
+        {% if products %}
+            {% for product in products %}
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="card product-card h-100">
+                    {% if promotion and promotion.is_valid %}
+                    <span class="badge bg-accent">{{ promotion.discount_percent }}% OFF</span>
+                    {% endif %}
+                    
+                    <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text flex-grow-1">{{ product.description|truncate(80) }}</p>
+                        
+                        <div class="product-price mb-3">
+                            {% if promotion and promotion.is_valid %}
+                            <span class="original-price">{{ product.price|format_cedis }}</span>
+                            <span class="sale-price">{{ (product.price * (1 - promotion.discount_percent/100))|format_cedis }}</span>
+                            {% else %}
+                            {{ product.price|format_cedis }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-outline-primary">View Details</a>
+                            
+                            {% if current_user.is_authenticated and product.stock > 0 %}
+                            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="add-to-cart-form" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </form>
+                            {% elif product.stock <= 0 %}
+                            <button class="btn btn-secondary" disabled>Out of Stock</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-white">
+                        <small class="text-muted">
+                            <i class="fas fa-tag me-1"></i> {{ {'camera': 'Camera Equipment', 'audio': 'Audio Equipment', 'lighting': 'Lighting Equipment', 'software': 'Software & Plugins', 'accessories': 'Accessories'}[product.category] }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                <h2>No products found</h2>
+                <p class="lead">We couldn't find any products matching your criteria.</p>
+                <a href="{{ url_for('products') }}" class="btn btn-primary mt-3">View All Products</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

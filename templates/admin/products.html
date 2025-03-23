@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+
+{% block title %}Manage Products{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 col-md-3 admin-sidebar p-0">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_products') }}">
+                            <i class="fas fa-box-open"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
+                            <i class="fas fa-shopping-cart"></i> Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_promotions') }}">
+                            <i class="fas fa-tags"></i> Promotions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_slideshow') }}">
+                            <i class="fas fa-images"></i> Slideshow
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10 col-md-9 admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Manage Products</h1>
+                <a href="{{ url_for('admin_add_product') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Add New Product
+                </a>
+            </div>
+            
+            <!-- Search and Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" id="product-search" class="form-control" placeholder="Search products...">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="category-filter">
+                                <option value="">All Categories</option>
+                                <option value="camera">Camera Equipment</option>
+                                <option value="audio">Audio Equipment</option>
+                                <option value="lighting">Lighting Equipment</option>
+                                <option value="software">Software & Plugins</option>
+                                <option value="accessories">Accessories</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Products Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr class="product-row" data-product-name="{{ product.name }}" data-product-category="{{ product.category }}">
+                                    <td>{{ product.id }}</td>
+                                    <td>
+                                        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="img-thumbnail" width="50">
+                                    </td>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ {'camera': 'Camera Equipment', 'audio': 'Audio Equipment', 'lighting': 'Lighting Equipment', 'software': 'Software & Plugins', 'accessories': 'Accessories'}[product.category] }}</td>
+                                    <td>{{ product.price|format_cedis }}</td>
+                                    <td>
+                                        {% if product.stock <= 5 %}
+                                        <span class="text-danger fw-bold">{{ product.stock }}</span>
+                                        {% else %}
+                                        {{ product.stock }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ product.updated_at|format_date }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-sm btn-outline-info" target="_blank">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <form action="{{ url_for('admin_delete_product', product_id=product.id) }}" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger btn-delete">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

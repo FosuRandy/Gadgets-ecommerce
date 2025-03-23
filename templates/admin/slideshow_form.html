@@ -1,0 +1,172 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ action }} Slide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 col-md-3 admin-sidebar p-0">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_products') }}">
+                            <i class="fas fa-box-open"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
+                            <i class="fas fa-shopping-cart"></i> Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_promotions') }}">
+                            <i class="fas fa-tags"></i> Promotions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_slideshow') }}">
+                            <i class="fas fa-images"></i> Slideshow
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10 col-md-9 admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>{{ action }} Slide</h1>
+                <a href="{{ url_for('admin_slideshow') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Slideshow
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin_add_slide') if action == 'Add' else url_for('admin_edit_slide', slide_id=slide.id) }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    {{ form.title.label(class="form-label") }}
+                                    {% if form.title.errors %}
+                                        {{ form.title(class="form-control is-invalid") }}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.title.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {{ form.title(class="form-control") }}
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.subtitle.label(class="form-label") }}
+                                    {% if form.subtitle.errors %}
+                                        {{ form.subtitle(class="form-control is-invalid") }}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.subtitle.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {{ form.subtitle(class="form-control") }}
+                                    {% endif %}
+                                    <small class="form-text text-muted">Optional subtitle text to display on the slide</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.image_url.label(class="form-label") }}
+                                    {% if form.image_url.errors %}
+                                        {{ form.image_url(class="form-control is-invalid", id="image_url") }}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.image_url.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {{ form.image_url(class="form-control", id="image_url") }}
+                                    {% endif %}
+                                    <small class="form-text text-muted">Enter a valid URL for the slide image (recommended size: 1200x600px)</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.link_url.label(class="form-label") }}
+                                    {% if form.link_url.errors %}
+                                        {{ form.link_url(class="form-control is-invalid") }}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.link_url.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {{ form.link_url(class="form-control") }}
+                                    {% endif %}
+                                    <small class="form-text text-muted">Optional URL to link to when the slide is clicked</small>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.display_order.label(class="form-label") }}
+                                        {% if form.display_order.errors %}
+                                            {{ form.display_order(class="form-control is-invalid") }}
+                                            <div class="invalid-feedback">
+                                                {% for error in form.display_order.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            {{ form.display_order(class="form-control") }}
+                                        {% endif %}
+                                        <small class="form-text text-muted">Lower numbers appear first</small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3 d-flex align-items-end">
+                                        <div class="form-check mt-4 w-100">
+                                            {{ form.is_active(class="form-check-input") }}
+                                            {{ form.is_active.label(class="form-check-label") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Image Preview</h5>
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <img id="image-preview" src="{{ slide.image_url if slide else '' }}" alt="Slide Preview" class="img-fluid" style="max-height: 200px; {% if not slide %}display: none;{% endif %}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a href="{{ url_for('admin_slideshow') }}" class="btn btn-secondary">Cancel</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

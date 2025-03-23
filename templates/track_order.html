@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+
+{% block title %}Track Order{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4 text-center">Track Your Order</h1>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card mb-5 shadow">
+                <div class="card-body p-4">
+                    <p class="mb-4">Enter your order number and email to track your order status.</p>
+                    
+                    <form method="POST" action="{{ url_for('track_order') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.order_number.label(class="form-label") }}
+                            {% if form.order_number.errors %}
+                                {{ form.order_number(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.order_number.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.order_number(class="form-control", placeholder="Enter your order number (e.g., ORD-12345678)") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.email.label(class="form-label") }}
+                            {% if form.email.errors %}
+                                {{ form.email(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.email(class="form-control", placeholder="Enter the email used for the order") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if order %}
+            <!-- Order Details -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Order #{{ order.order_number }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Order Date:</strong> {{ order.created_at|format_date }}</p>
+                            <p class="mb-1"><strong>Total Amount:</strong> {{ order.total_amount|format_cedis }}</p>
+                            <p class="mb-0"><strong>Payment Status:</strong> {{ order.payment_status|upper }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Shipping Address:</strong> {{ order.shipping_address }}</p>
+                            <p class="mb-1"><strong>City:</strong> {{ order.shipping_city }}</p>
+                            <p class="mb-0"><strong>Phone:</strong> {{ order.shipping_phone }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <h5>Order Status</h5>
+                        <div class="d-inline-block order-status status-{{ order.status }}">
+                            {{ order.status|upper }}
+                        </div>
+                    </div>
+                    
+                    <!-- Order Status Timeline -->
+                    <div class="order-timeline mt-4">
+                        <div class="row text-center position-relative">
+                            <!-- Status Timeline Line -->
+                            <div class="position-absolute" style="top: 25px; left: 0; right: 0; height: 2px; background-color: var(--gray-medium); z-index: 1;"></div>
+                            
+                            <div class="col">
+                                <div class="position-relative z-3">
+                                    <div class="status-circle {{ 'active' if order.status in ['pending', 'processing', 'shipped', 'delivered'] }}" style="margin: 0 auto; width: 50px; height: 50px; border-radius: 50%; background-color: {{ 'var(--primary-color)' if order.status in ['pending', 'processing', 'shipped', 'delivered'] else 'var(--gray-medium)' }}; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-clipboard-check text-white"></i>
+                                    </div>
+                                </div>
+                                <p class="mt-2">Order Placed</p>
+                            </div>
+                            
+                            <div class="col">
+                                <div class="position-relative z-3">
+                                    <div class="status-circle {{ 'active' if order.status in ['processing', 'shipped', 'delivered'] }}" style="margin: 0 auto; width: 50px; height: 50px; border-radius: 50%; background-color: {{ 'var(--primary-color)' if order.status in ['processing', 'shipped', 'delivered'] else 'var(--gray-medium)' }}; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-box text-white"></i>
+                                    </div>
+                                </div>
+                                <p class="mt-2">Processing</p>
+                            </div>
+                            
+                            <div class="col">
+                                <div class="position-relative z-3">
+                                    <div class="status-circle {{ 'active' if order.status in ['shipped', 'delivered'] }}" style="margin: 0 auto; width: 50px; height: 50px; border-radius: 50%; background-color: {{ 'var(--primary-color)' if order.status in ['shipped', 'delivered'] else 'var(--gray-medium)' }}; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-shipping-fast text-white"></i>
+                                    </div>
+                                </div>
+                                <p class="mt-2">Shipped</p>
+                            </div>
+                            
+                            <div class="col">
+                                <div class="position-relative z-3">
+                                    <div class="status-circle {{ 'active' if order.status == 'delivered' }}" style="margin: 0 auto; width: 50px; height: 50px; border-radius: 50%; background-color: {{ 'var(--primary-color)' if order.status == 'delivered' else 'var(--gray-medium)' }}; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-home text-white"></i>
+                                    </div>
+                                </div>
+                                <p class="mt-2">Delivered</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>Order Items</h5>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order.items %}
+                                    <tr>
+                                        <td>{{ item.product.name }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>{{ item.price|format_cedis }}</td>
+                                        <td>{{ (item.price * item.quantity)|format_cedis }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                        <td><strong>{{ order.total_amount|format_cedis }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

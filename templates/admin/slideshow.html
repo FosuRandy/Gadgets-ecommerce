@@ -1,0 +1,196 @@
+{% extends "layout.html" %}
+
+{% block title %}Manage Slideshow{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 col-md-3 admin-sidebar p-0">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_products') }}">
+                            <i class="fas fa-box-open"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
+                            <i class="fas fa-shopping-cart"></i> Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_promotions') }}">
+                            <i class="fas fa-tags"></i> Promotions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_slideshow') }}">
+                            <i class="fas fa-images"></i> Slideshow
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10 col-md-9 admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Manage Slideshow</h1>
+                <a href="{{ url_for('admin_add_slide') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Add New Slide
+                </a>
+            </div>
+            
+            <!-- Slideshow Preview -->
+            {% if slides %}
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Slideshow Preview</h5>
+                </div>
+                <div class="card-body">
+                    <div id="slideshowPreview" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-indicators">
+                            {% for slide in slides %}
+                            <button type="button" data-bs-target="#slideshowPreview" data-bs-slide-to="{{ loop.index0 }}" 
+                                    {% if loop.first %}class="active" aria-current="true"{% endif %} 
+                                    aria-label="Slide {{ loop.index }}"></button>
+                            {% endfor %}
+                        </div>
+                        <div class="carousel-inner">
+                            {% for slide in slides %}
+                            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                <img src="{{ slide.image_url }}" class="d-block w-100" alt="{{ slide.title }}" style="height: 300px; object-fit: cover;">
+                                <div class="carousel-caption d-none d-md-block">
+                                    <h5>{{ slide.title }}</h5>
+                                    {% if slide.subtitle %}
+                                    <p>{{ slide.subtitle }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#slideshowPreview" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#slideshowPreview" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Slides Table -->
+            <div class="card">
+                <div class="card-body">
+                    {% if slides %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Order</th>
+                                    <th>Image</th>
+                                    <th>Title</th>
+                                    <th>Subtitle</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for slide in slides %}
+                                <tr>
+                                    <td>{{ slide.display_order }}</td>
+                                    <td>
+                                        <img src="{{ slide.image_url }}" alt="{{ slide.title }}" class="img-thumbnail" style="width: 100px; height: 60px; object-fit: cover;">
+                                    </td>
+                                    <td>{{ slide.title }}</td>
+                                    <td>{{ slide.subtitle|default('-', true) }}</td>
+                                    <td>
+                                        {% if slide.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('admin_edit_slide', slide_id=slide.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ url_for('admin_delete_slide', slide_id=slide.id) }}" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger btn-delete">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-images fa-4x text-muted mb-3"></i>
+                        <h4>No slideshow slides found</h4>
+                        <p>Add slides to showcase on your homepage.</p>
+                        <a href="{{ url_for('admin_add_slide') }}" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus me-2"></i> Add First Slide
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Slideshow Guidelines -->
+            <div class="card mt-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Slideshow Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-image fa-3x text-primary mb-3"></i>
+                                <h5>Image Guidelines</h5>
+                                <p>Use high-quality images with at least 1200x600px resolution for best results.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-sort-numeric-down fa-3x text-primary mb-3"></i>
+                                <h5>Display Order</h5>
+                                <p>Set the display order to control the sequence of slides in the carousel.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-link fa-3x text-primary mb-3"></i>
+                                <h5>Link Destinations</h5>
+                                <p>Add optional link URLs to make slides clickable and drive traffic to specific pages.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

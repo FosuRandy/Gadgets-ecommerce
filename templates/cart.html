@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Your Shopping Cart</h1>
+    
+    {% if cart_items %}
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Cart Items -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    {% for item in cart_items %}
+                    <div class="cart-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 col-4 mb-2 mb-md-0">
+                                <img src="{{ item.product.image_url }}" class="img-fluid rounded cart-item-img" alt="{{ item.product.name }}">
+                            </div>
+                            <div class="col-md-4 col-8 mb-2 mb-md-0">
+                                <h5>{{ item.product.name }}</h5>
+                                <p class="text-muted small mb-0">
+                                    <i class="fas fa-tag me-1"></i> 
+                                    {{ {'camera': 'Camera Equipment', 'audio': 'Audio Equipment', 'lighting': 'Lighting Equipment', 'software': 'Software & Plugins', 'accessories': 'Accessories'}[item.product.category] }}
+                                </p>
+                            </div>
+                            <div class="col-md-2 col-4 text-md-center">
+                                <p class="mb-0 item-price" data-price="{{ item.product.price }}">{{ item.product.price|format_cedis }}</p>
+                            </div>
+                            <div class="col-md-2 col-4">
+                                <form action="{{ url_for('update_cart_item', item_id=item.id) }}" method="POST" class="cart-update-form">
+                                    <div class="quantity-wrapper d-flex justify-content-center">
+                                        <button class="btn btn-sm btn-outline-secondary quantity-control" type="button">-</button>
+                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" 
+                                            class="form-control form-control-sm text-center quantity-input cart-quantity-input" style="width: 60px;">
+                                        <button class="btn btn-sm btn-outline-secondary quantity-control quantity-increment" type="button">+</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="col-md-2 col-4 text-end">
+                                <p class="mb-0 item-subtotal">{{ (item.product.price * item.quantity)|format_cedis }}</p>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12 text-end">
+                                <form action="{{ url_for('remove_from_cart', item_id=item.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger remove-from-cart">
+                                        <i class="fas fa-trash-alt me-1"></i> Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Continue Shopping -->
+            <div class="d-flex">
+                <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i> Continue Shopping
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Cart Summary -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>{{ total|format_cedis }}</span>
+                    </div>
+                    
+                    {% if promotion and promotion.is_valid %}
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Discount ({{ promotion.discount_percent }}%):</span>
+                        <span>-{{ (total - promo_total)|format_cedis }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="fw-bold">Total:</span>
+                        <span class="fw-bold cart-total">{{ promo_total|format_cedis }}</span>
+                    </div>
+                    {% else %}
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="fw-bold">Total:</span>
+                        <span class="fw-bold cart-total">{{ total|format_cedis }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid">
+                        <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-lg">
+                            Proceed to Checkout
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payment Methods -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">We Accept</h5>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <img src="https://cdn.shopify.com/s/files/1/0046/2471/1793/files/paystack-logo.svg" alt="Paystack" height="30">
+                        <img src="https://cdn.shopify.com/s/files/1/0046/2471/1793/files/mastercard.svg" alt="Mastercard" height="30">
+                        <img src="https://cdn.shopify.com/s/files/1/0046/2471/1793/files/visa.svg" alt="Visa" height="30">
+                        <img src="https://cdn.shopify.com/s/files/1/0046/2471/1793/files/momo.svg" alt="Mobile Money" height="30">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+        <h2>Your cart is empty</h2>
+        <p class="lead">Looks like you haven't added any products to your cart yet.</p>
+        <a href="{{ url_for('products') }}" class="btn btn-primary mt-3">Start Shopping</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

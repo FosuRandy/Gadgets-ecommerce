@@ -1,0 +1,73 @@
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, FloatField, IntegerField, SelectField, HiddenField, DateTimeField, FileField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, NumberRange, ValidationError, Optional, URL
+from models import User
+
+class RegistrationForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Register')
+    
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user:
+            raise ValidationError('Username is already taken. Please choose a different one.')
+    
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('Email is already registered. Please use a different one.')
+
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember = BooleanField('Remember Me')
+    submit = SubmitField('Login')
+
+class ProductForm(FlaskForm):
+    name = StringField('Product Name', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('Description', validators=[DataRequired()])
+    price = FloatField('Price (GH₵)', validators=[DataRequired(), NumberRange(min=0)])
+    stock = IntegerField('Stock Quantity', validators=[DataRequired(), NumberRange(min=0)])
+    image_url = StringField('Image URL', validators=[DataRequired(), URL()])
+    category = SelectField('Category', validators=[DataRequired()], choices=[
+        ('camera', 'Camera Equipment'),
+        ('audio', 'Audio Equipment'),
+        ('lighting', 'Lighting Equipment'),
+        ('software', 'Software & Plugins'),
+        ('accessories', 'Accessories')
+    ])
+    submit = SubmitField('Save Product')
+
+class CheckoutForm(FlaskForm):
+    full_name = StringField('Full Name', validators=[DataRequired(), Length(max=100)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    phone = StringField('Phone', validators=[DataRequired(), Length(min=10, max=20)])
+    address = TextAreaField('Shipping Address', validators=[DataRequired()])
+    city = StringField('City', validators=[DataRequired()])
+    submit = SubmitField('Proceed to Payment')
+
+class OrderTrackingForm(FlaskForm):
+    order_number = StringField('Order Number', validators=[DataRequired(), Length(min=5, max=20)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Track Order')
+
+class PromotionForm(FlaskForm):
+    title = StringField('Promotion Title', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('Description', validators=[DataRequired()])
+    discount_percent = FloatField('Discount Percentage', validators=[DataRequired(), NumberRange(min=1, max=100)])
+    start_date = DateTimeField('Start Date', validators=[DataRequired()], format='%Y-%m-%dT%H:%M')
+    end_date = DateTimeField('End Date', validators=[DataRequired()], format='%Y-%m-%dT%H:%M')
+    is_active = BooleanField('Active')
+    submit = SubmitField('Save Promotion')
+
+class SlideshowForm(FlaskForm):
+    title = StringField('Title', validators=[DataRequired(), Length(max=100)])
+    subtitle = StringField('Subtitle', validators=[Optional(), Length(max=200)])
+    image_url = StringField('Image URL', validators=[DataRequired(), URL()])
+    link_url = StringField('Link URL', validators=[Optional(), URL()])
+    display_order = IntegerField('Display Order', validators=[DataRequired(), NumberRange(min=0)])
+    is_active = BooleanField('Active')
+    submit = SubmitField('Save Slide')

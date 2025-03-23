@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{% block title %}Payment{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Payment</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <img src="https://cdn.shopify.com/s/files/1/0046/2471/1793/files/paystack-logo.svg" alt="Paystack" height="40">
+                    </div>
+                    
+                    <!-- Payment Summary -->
+                    <div class="mb-4">
+                        <h5>Order #{{ order.order_number }}</h5>
+                        <p class="mb-1">Total Amount: <strong>{{ order.total_amount|format_cedis }}</strong></p>
+                    </div>
+                    
+                    <!-- Payment Messages -->
+                    <div id="payment-messages" class="mb-4"></div>
+                    
+                    <!-- Payment Form -->
+                    <form id="paystack-payment-form">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> You'll be redirected to Paystack to complete your payment.
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button id="paystack-pay-button" type="button" class="btn btn-primary btn-lg"
+                                    data-public-key="{{ paystack_public_key }}"
+                                    data-email="{{ customer_email }}"
+                                    data-amount="{{ amount_pesewas }}"
+                                    data-currency="GHS">
+                                Pay Now
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-lock me-1"></i> Your payment information is secure with Paystack
+                            </small>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="text-center">
+                        <div class="mb-2">We accept:</div>
+                        <div class="d-flex justify-content-center">
+                            <img src="https://cdn.shopify.com/s/files/1/0046/2471/1793/files/mastercard.svg" alt="Mastercard" height="30" class="mx-2">
+                            <img src="https://cdn.shopify.com/s/files/1/0046/2471/1793/files/visa.svg" alt="Visa" height="30" class="mx-2">
+                            <img src="https://cdn.shopify.com/s/files/1/0046/2471/1793/files/momo.svg" alt="Mobile Money" height="30" class="mx-2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/paystack.js') }}"></script>
+{% endblock %}
