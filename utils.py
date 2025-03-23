@@ -233,3 +233,123 @@ def apply_promotion_to_price(price, promotion=None):
         discount = price * (promotion.discount_percent / 100)
         return price - discount
     return price
+import os
+import json
+import random
+import requests
+from datetime import datetime, timedelta
+from flask import current_app, url_for
+from flask_mail import Message
+from app import db, mail
+from models import User, Product, Promotion, Slideshow
+
+def send_order_confirmation_email(order):
+    """Send order confirmation email to customer"""
+    msg = Message(
+        f'Order Confirmation - {order.order_number}',
+        sender=current_app.config['MAIL_DEFAULT_SENDER'],
+        recipients=[order.user.email]
+    )
+    
+    msg.body = f'''Dear {order.user.username},
+
+Thank you for your order!
+
+Order Details:
+Order Number: {order.order_number}
+Total Amount: GH₵{order.total_amount:.2f}
+
+We will process your order shortly.
+
+Best regards,
+ContentCreate Team
+'''
+    
+    mail.send(msg)
+
+def verify_paystack_transaction(reference):
+    """Verify Paystack transaction"""
+    if not current_app.config['PAYSTACK_SECRET_KEY']:
+        # For testing without Paystack
+        return {'status': True, 'data': {'status': 'success'}}
+        
+    url = f"https://api.paystack.co/transaction/verify/{reference}"
+    headers = {
+        "Authorization": f"Bearer {current_app.config['PAYSTACK_SECRET_KEY']}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except requests.exceptions.RequestException:
+        return None
+
+def get_active_promotion():
+    """Get currently active promotion"""
+    now = datetime.utcnow()
+    return Promotion.query.filter(
+        Promotion.is_active == True,
+        Promotion.start_date <= now,
+        Promotion.end_date >= now
+    ).first()
+
+def apply_promotion_to_price(price, promotion):
+    """Apply promotion discount to price"""
+    if not promotion or not promotion.is_valid:
+        return price
+        
+    discount = price * (promotion.discount_percent / 100)
+    return price - discount
+
+def initialize_demo_data():
+    """Initialize demo data if database is empty"""
+    # Only add demo data if no users exist
+    if User.query.count() > 0:
+        return
+        
+    # Create admin user
+    admin = User(
+        username="admin",
+        email="admin@example.com",
+        role="admin"
+    )
+    admin.set_password("admin123")
+    db.session.add(admin)
+    
+    # Create demo products
+    products = [
+        {
+            "name": "Professional Camera",
+            "description": "High-quality digital camera for professional photography",
+            "price": 2499.99,
+            "stock": 10,
+            "category": "camera"
+        },
+        {
+            "name": "Wireless Microphone",
+            "description": "Professional wireless microphone system",
+            "price": 299.99,
+            "stock": 15,
+            "category": "audio"
+        }
+    ]
+    
+    for product_data in products:
+        product = Product(**product_data)
+        db.session.add(product)
+    
+    # Create demo slideshow
+    slideshow = Slideshow(
+        title="Welcome to ContentCreate",
+        subtitle="Professional Equipment for Content Creators",
+        image_url="/static/images/banner.jpg",
+        display_order=1,
+        is_active=True
+    )
+    db.session.add(slideshow)
+    
+    # Commit all changes
+    db.session.commit()
