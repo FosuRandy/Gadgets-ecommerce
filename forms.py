@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, FloatField, IntegerField, SelectField, HiddenField, DateTimeField, FileField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, NumberRange, ValidationError, Optional, URL
-from models import User
+from datetime import datetime
+from models import User, Product, Supplier
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
@@ -71,3 +72,64 @@ class SlideshowForm(FlaskForm):
     display_order = IntegerField('Display Order', validators=[DataRequired(), NumberRange(min=0)])
     is_active = BooleanField('Active')
     submit = SubmitField('Save Slide')
+
+class StockAdjustmentForm(FlaskForm):
+    product_id = SelectField('Product', validators=[DataRequired()], coerce=int)
+    quantity = IntegerField('Quantity Change', validators=[DataRequired()])
+    reason = SelectField('Reason', validators=[DataRequired()], choices=[
+        ('restock', 'Restock (New Inventory)'),
+        ('damage', 'Damaged Items'),
+        ('adjustment', 'Inventory Adjustment'),
+        ('return', 'Customer Return'),
+        ('other', 'Other (Please specify in notes)')
+    ])
+    notes = TextAreaField('Notes', validators=[Optional()])
+    reference = StringField('Reference (Optional)', validators=[Optional(), Length(max=100)])
+    submit = SubmitField('Submit Adjustment')
+    
+    def __init__(self, *args, **kwargs):
+        super(StockAdjustmentForm, self).__init__(*args, **kwargs)
+        self.product_id.choices = [(p.id, p.name) for p in Product.query.order_by(Product.name).all()]
+
+class SupplierForm(FlaskForm):
+    name = StringField('Supplier Name', validators=[DataRequired(), Length(max=100)])
+    contact_name = StringField('Contact Person', validators=[Optional(), Length(max=100)])
+    email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
+    phone = StringField('Phone', validators=[Optional(), Length(max=20)])
+    address = TextAreaField('Address', validators=[Optional()])
+    notes = TextAreaField('Notes', validators=[Optional()])
+    submit = SubmitField('Save Supplier')
+
+class PurchaseOrderForm(FlaskForm):
+    supplier_id = SelectField('Supplier', validators=[DataRequired()], coerce=int)
+    expected_delivery_date = DateTimeField('Expected Delivery Date', validators=[Optional()], format='%Y-%m-%dT%H:%M')
+    notes = TextAreaField('Notes', validators=[Optional()])
+    status = SelectField('Status', validators=[DataRequired()], choices=[
+        ('draft', 'Draft'),
+        ('ordered', 'Ordered'),
+        ('received', 'Received'),
+        ('cancelled', 'Cancelled')
+    ])
+    submit = SubmitField('Save Purchase Order')
+    
+    def __init__(self, *args, **kwargs):
+        super(PurchaseOrderForm, self).__init__(*args, **kwargs)
+        self.supplier_id.choices = [(s.id, s.name) for s in Supplier.query.order_by(Supplier.name).all()]
+
+class PurchaseOrderItemForm(FlaskForm):
+    product_id = SelectField('Product', validators=[DataRequired()], coerce=int)
+    quantity_ordered = IntegerField('Quantity Ordered', validators=[DataRequired(), NumberRange(min=1)])
+    unit_price = FloatField('Unit Price (GH₵)', validators=[DataRequired(), NumberRange(min=0)])
+    submit = SubmitField('Add Item')
+    
+    def __init__(self, *args, **kwargs):
+        super(PurchaseOrderItemForm, self).__init__(*args, **kwargs)
+        self.product_id.choices = [(p.id, p.name) for p in Product.query.order_by(Product.name).all()]
+
+class ReceivePurchaseOrderForm(FlaskForm):
+    delivery_date = DateTimeField('Delivery Date', validators=[DataRequired()], format='%Y-%m-%dT%H:%M', default=datetime.utcnow)
+    notes = TextAreaField('Delivery Notes', validators=[Optional()])
+    submit = SubmitField('Receive Items')
+
+class ReceiveItemForm(FlaskForm):
+    quantity_received = IntegerField('Quantity Received', validators=[DataRequired(), NumberRange(min=0)])

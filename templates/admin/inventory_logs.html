@@ -1,0 +1,218 @@
+{% extends "layout.html" %}
+
+{% block title %}Inventory Logs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 col-md-3 admin-sidebar p-0">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_products') }}">
+                            <i class="fas fa-box-open"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
+                            <i class="fas fa-shopping-cart"></i> Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_promotions') }}">
+                            <i class="fas fa-tags"></i> Promotions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_slideshow') }}">
+                            <i class="fas fa-images"></i> Slideshow
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_inventory') }}">
+                            <i class="fas fa-boxes"></i> Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_suppliers') }}">
+                            <i class="fas fa-truck"></i> Suppliers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_purchase_orders') }}">
+                            <i class="fas fa-clipboard-list"></i> Purchase Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10 col-md-9 admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Inventory Logs</h1>
+                <a href="{{ url_for('admin_inventory') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Inventory
+                </a>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Filter Logs</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('admin_inventory_logs') }}">
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label">Product</label>
+                                <select name="product_id" class="form-select">
+                                    <option value="">All Products</option>
+                                    {% for product in products %}
+                                    <option value="{{ product.id }}" {% if selected_product == product.id %}selected{% endif %}>{{ product.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Reason</label>
+                                <select name="reason" class="form-select">
+                                    <option value="">All Reasons</option>
+                                    {% for reason in reasons %}
+                                    <option value="{{ reason }}" {% if selected_reason == reason %}selected{% endif %}>{{ reason }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-filter"></i> Apply Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Logs Table -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Inventory Logs</h5>
+                </div>
+                <div class="card-body">
+                    {% if logs.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Product</th>
+                                    <th>SKU</th>
+                                    <th>Change</th>
+                                    <th>Previous Stock</th>
+                                    <th>New Stock</th>
+                                    <th>Reason</th>
+                                    <th>Reference</th>
+                                    <th>Admin</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs.items %}
+                                <tr>
+                                    <td>{{ log.created_at|format_date }}</td>
+                                    <td>
+                                        <a href="{{ url_for('admin_edit_product', product_id=log.product.id) }}">
+                                            {{ log.product.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ log.product.sku or 'N/A' }}</td>
+                                    <td class="{% if log.quantity_change > 0 %}text-success{% elif log.quantity_change < 0 %}text-danger{% endif %}">
+                                        {% if log.quantity_change > 0 %}+{% endif %}{{ log.quantity_change }}
+                                    </td>
+                                    <td>{{ log.previous_stock }}</td>
+                                    <td>{{ log.new_stock }}</td>
+                                    <td>{{ log.reason }}</td>
+                                    <td>{{ log.reference or 'N/A' }}</td>
+                                    <td>{{ log.admin.username if log.admin else 'System' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <nav aria-label="Inventory logs pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if logs.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin_inventory_logs', page=logs.prev_num, product_id=selected_product, reason=selected_reason) }}">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in logs.iter_pages(left_edge=2, right_edge=2, left_current=1, right_current=2) %}
+                                {% if page_num %}
+                                    {% if logs.page == page_num %}
+                                    <li class="page-item active">
+                                        <a class="page-link" href="{{ url_for('admin_inventory_logs', page=page_num, product_id=selected_product, reason=selected_reason) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_inventory_logs', page=page_num, product_id=selected_product, reason=selected_reason) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">...</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if logs.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin_inventory_logs', page=logs.next_num, product_id=selected_product, reason=selected_reason) }}">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No inventory logs found matching your criteria.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

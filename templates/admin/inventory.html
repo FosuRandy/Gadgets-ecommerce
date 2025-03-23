@@ -1,0 +1,249 @@
+{% extends "layout.html" %}
+
+{% block title %}Inventory Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 col-md-3 admin-sidebar p-0">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_products') }}">
+                            <i class="fas fa-box-open"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
+                            <i class="fas fa-shopping-cart"></i> Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_promotions') }}">
+                            <i class="fas fa-tags"></i> Promotions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_slideshow') }}">
+                            <i class="fas fa-images"></i> Slideshow
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_inventory') }}">
+                            <i class="fas fa-boxes"></i> Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_suppliers') }}">
+                            <i class="fas fa-truck"></i> Suppliers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_purchase_orders') }}">
+                            <i class="fas fa-clipboard-list"></i> Purchase Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10 col-md-9 admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Inventory Management</h1>
+                <div>
+                    <a href="{{ url_for('admin_inventory_logs') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-history"></i> View Logs
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Stats Overview -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-title">Total Products</div>
+                        <div class="stat-value">{{ products|length }}</div>
+                        <p class="text-muted mb-0"><i class="fas fa-box"></i> In catalog</p>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="stat-card low-stock">
+                        <div class="stat-title">Low Stock Items</div>
+                        <div class="stat-value">{{ low_stock_count }}</div>
+                        <p class="text-muted mb-0"><i class="fas fa-exclamation-triangle"></i> Need attention</p>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-title">Out of Stock</div>
+                        <div class="stat-value">{{ products|selectattr('stock', 'equalto', 0)|list|length }}</div>
+                        <p class="text-muted mb-0"><i class="fas fa-ban"></i> Need restock</p>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="stat-card products">
+                        <div class="stat-title">Recent Adjustments</div>
+                        <div class="stat-value">{{ recent_logs|length }}</div>
+                        <p class="text-muted mb-0"><i class="fas fa-history"></i> Last 10 changes</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Low Stock Alert -->
+            {% if low_stock_count > 0 %}
+            <div class="alert alert-warning mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Low Stock Alert!</strong> {{ low_stock_count }} products are below their minimum stock threshold and need attention.
+            </div>
+            {% endif %}
+            
+            <!-- Product Inventory List -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Product Inventory</h5>
+                        <div class="input-group input-group-sm" style="width: 300px;">
+                            <input type="text" id="inventory-search" class="form-control" placeholder="Search products...">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>SKU</th>
+                                    <th>Category</th>
+                                    <th>Current Stock</th>
+                                    <th>Min. Threshold</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr class="{% if product.stock <= product.low_stock_threshold %}table-warning{% endif %} {% if product.stock == 0 %}table-danger{% endif %}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if product.image_url %}
+                                            <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-thumbnail me-2">
+                                            {% else %}
+                                            <div class="placeholder-thumbnail me-2"><i class="fas fa-image"></i></div>
+                                            {% endif %}
+                                            <div>{{ product.name }}</div>
+                                        </div>
+                                    </td>
+                                    <td>{{ product.sku or 'N/A' }}</td>
+                                    <td>{{ product.category }}</td>
+                                    <td>{{ product.stock }}</td>
+                                    <td>{{ product.low_stock_threshold }}</td>
+                                    <td>
+                                        {% if product.stock == 0 %}
+                                        <span class="badge bg-danger">Out of Stock</span>
+                                        {% elif product.stock <= product.low_stock_threshold %}
+                                        <span class="badge bg-warning text-dark">Low Stock</span>
+                                        {% else %}
+                                        <span class="badge bg-success">In Stock</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin_adjust_stock', product_id=product.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-edit"></i> Adjust
+                                        </a>
+                                        <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" class="btn btn-sm btn-secondary">
+                                            <i class="fas fa-cog"></i> Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Inventory Logs -->
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Recent Inventory Changes</h5>
+                        <a href="{{ url_for('admin_inventory_logs') }}" class="btn btn-sm btn-primary">View All</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Product</th>
+                                    <th>Change</th>
+                                    <th>Previous Stock</th>
+                                    <th>New Stock</th>
+                                    <th>Reason</th>
+                                    <th>Admin</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_logs %}
+                                <tr>
+                                    <td>{{ log.created_at|format_date }}</td>
+                                    <td>{{ log.product.name }}</td>
+                                    <td class="{% if log.quantity_change > 0 %}text-success{% elif log.quantity_change < 0 %}text-danger{% endif %}">
+                                        {% if log.quantity_change > 0 %}+{% endif %}{{ log.quantity_change }}
+                                    </td>
+                                    <td>{{ log.previous_stock }}</td>
+                                    <td>{{ log.new_stock }}</td>
+                                    <td>{{ log.reason }}</td>
+                                    <td>{{ log.admin.username if log.admin else 'System' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Simple search functionality for inventory table
+    const searchInput = document.getElementById('inventory-search');
+    const inventoryTable = document.getElementById('inventory-table');
+    const rows = inventoryTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = searchInput.value.toLowerCase();
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const text = row.textContent.toLowerCase();
+            
+            if (text.indexOf(searchTerm) > -1) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

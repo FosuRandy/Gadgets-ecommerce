@@ -1,0 +1,233 @@
+{% extends "layout.html" %}
+
+{% block title %}Adjust Stock - {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-2 col-md-3 admin-sidebar p-0">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_products') }}">
+                            <i class="fas fa-box-open"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_orders') }}">
+                            <i class="fas fa-shopping-cart"></i> Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_promotions') }}">
+                            <i class="fas fa-tags"></i> Promotions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_slideshow') }}">
+                            <i class="fas fa-images"></i> Slideshow
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin_inventory') }}">
+                            <i class="fas fa-boxes"></i> Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_suppliers') }}">
+                            <i class="fas fa-truck"></i> Suppliers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_purchase_orders') }}">
+                            <i class="fas fa-clipboard-list"></i> Purchase Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-10 col-md-9 admin-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Adjust Stock: {{ product.name }}</h1>
+                <a href="{{ url_for('admin_inventory') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Inventory
+                </a>
+            </div>
+            
+            <div class="row">
+                <!-- Product Information -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Product Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                {% if product.image_url %}
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="img-fluid product-img mb-3" style="max-height: 150px;">
+                                {% else %}
+                                <div class="placeholder-image mb-3"><i class="fas fa-image fa-4x"></i></div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="product-info">
+                                <p><strong>SKU:</strong> {{ product.sku or 'N/A' }}</p>
+                                <p><strong>Category:</strong> {{ product.category }}</p>
+                                <p><strong>Price:</strong> {{ product.price|format_cedis }}</p>
+                                <p><strong>Current Stock:</strong> <span class="badge {% if product.stock <= product.low_stock_threshold %}bg-warning{% elif product.stock == 0 %}bg-danger{% else %}bg-success{% endif %}">{{ product.stock }}</span></p>
+                                <p><strong>Low Stock Threshold:</strong> {{ product.low_stock_threshold }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Adjustment Form -->
+                <div class="col-md-8 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Stock Adjustment</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('admin_adjust_stock', product_id=product.id) }}">
+                                {{ form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Note:</strong> Enter a positive number to add stock, or a negative number to remove stock.
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">{{ form.quantity.label }}</label>
+                                    <div class="col-sm-9">
+                                        {{ form.quantity(class="form-control", placeholder="e.g. 10 (add) or -5 (remove)") }}
+                                        {% if form.quantity.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.quantity.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">{{ form.reason.label }}</label>
+                                    <div class="col-sm-9">
+                                        {{ form.reason(class="form-select") }}
+                                        {% if form.reason.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.reason.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">{{ form.reference.label }}</label>
+                                    <div class="col-sm-9">
+                                        {{ form.reference(class="form-control", placeholder="e.g. Invoice #12345") }}
+                                        {% if form.reference.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.reference.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                        <div class="form-text">Optional reference number (e.g., invoice number, PO number)</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <label class="col-sm-3 col-form-label">{{ form.notes.label }}</label>
+                                    <div class="col-sm-9">
+                                        {{ form.notes(class="form-control", rows="3") }}
+                                        {% if form.notes.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.notes.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-end mt-4">
+                                    <a href="{{ url_for('admin_inventory') }}" class="btn btn-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary">Submit Adjustment</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Adjustments for this Product -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Recent Adjustments for this Product</h5>
+                        </div>
+                        <div class="card-body">
+                            {% set logs = product.inventory_logs|sort(attribute='created_at', reverse=true)|list %}
+                            {% if logs %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Change</th>
+                                            <th>Previous</th>
+                                            <th>New</th>
+                                            <th>Reason</th>
+                                            <th>Admin</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in logs[:5] %}
+                                        <tr>
+                                            <td>{{ log.created_at|format_date }}</td>
+                                            <td class="{% if log.quantity_change > 0 %}text-success{% elif log.quantity_change < 0 %}text-danger{% endif %}">
+                                                {% if log.quantity_change > 0 %}+{% endif %}{{ log.quantity_change }}
+                                            </td>
+                                            <td>{{ log.previous_stock }}</td>
+                                            <td>{{ log.new_stock }}</td>
+                                            <td>{{ log.reason }}</td>
+                                            <td>{{ log.admin.username if log.admin else 'System' }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No recent adjustments for this product.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Optional JavaScript for form validation or interaction
+});
+</script>
+{% endblock %}

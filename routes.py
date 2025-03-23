@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 from app import db, login_manager
-from models import User, Product, CartItem, Order, OrderItem, Promotion, Slideshow
+from models import User, Product, CartItem, Order, OrderItem, Promotion, Slideshow, InventoryLog, Supplier, PurchaseOrder, PurchaseOrderItem
 from forms import (RegistrationForm, LoginForm, ProductForm, CheckoutForm, 
                   OrderTrackingForm, PromotionForm, SlideshowForm)
 from utils import (send_order_confirmation_email, verify_paystack_transaction, 
@@ -790,6 +790,455 @@ def register_routes(app):
         
         flash('Slide deleted successfully', 'success')
         return redirect(url_for('admin_slideshow'))
+        
+    # Inventory Management Routes
+    @app.route('/admin/inventory')
+    @login_required
+    def admin_inventory():
+        """Admin inventory management"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        # Get all products with their stock status
+        products = Product.query.order_by(Product.name).all()
+        
+        # Get recent inventory logs
+        recent_logs = InventoryLog.query.order_by(InventoryLog.created_at.desc()).limit(10).all()
+        
+        # Count low stock items
+        low_stock_count = Product.query.filter(Product.stock <= Product.low_stock_threshold).count()
+        
+        return render_template('admin/inventory.html',
+                              title='Inventory Management',
+                              products=products,
+                              recent_logs=recent_logs,
+                              low_stock_count=low_stock_count)
+    
+    @app.route('/admin/inventory/adjust/<int:product_id>', methods=['GET', 'POST'])
+    @login_required
+    def admin_adjust_stock(product_id):
+        """Adjust product stock"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        product = Product.query.get_or_404(product_id)
+        form = StockAdjustmentForm()
+        
+        # Pre-select the product in the form
+        form.product_id.data = product.id
+        
+        if form.validate_on_submit():
+            # Get form data
+            quantity = form.quantity.data
+            reason = form.reason.data
+            reference = form.reference.data
+            
+            # Adjust stock and create log entry
+            log_data = product.adjust_stock(quantity, reason, current_user.id, reference)
+            
+            # Create inventory log
+            log = InventoryLog(**log_data)
+            db.session.add(log)
+            
+            # Save changes
+            db.session.commit()
+            
+            flash(f'Stock updated successfully. New stock level: {product.stock}', 'success')
+            return redirect(url_for('admin_inventory'))
+        
+        return render_template('admin/stock_adjustment.html',
+                              title='Adjust Stock',
+                              form=form,
+                              product=product)
+    
+    @app.route('/admin/inventory/logs')
+    @login_required
+    def admin_inventory_logs():
+        """View inventory logs"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        # Get query parameters
+        product_id = request.args.get('product_id', type=int)
+        reason = request.args.get('reason')
+        
+        # Base query
+        query = InventoryLog.query
+        
+        # Apply filters if provided
+        if product_id:
+            query = query.filter_by(product_id=product_id)
+        
+        if reason:
+            query = query.filter_by(reason=reason)
+        
+        # Get logs with pagination
+        page = request.args.get('page', 1, type=int)
+        logs = query.order_by(InventoryLog.created_at.desc()).paginate(page=page, per_page=20)
+        
+        # Get all products for filter dropdown
+        products = Product.query.order_by(Product.name).all()
+        
+        # Get all reasons for filter dropdown
+        reasons = db.session.query(InventoryLog.reason).distinct().all()
+        reasons = [r[0] for r in reasons]
+        
+        return render_template('admin/inventory_logs.html',
+                              title='Inventory Logs',
+                              logs=logs,
+                              products=products,
+                              reasons=reasons,
+                              selected_product=product_id,
+                              selected_reason=reason)
+    
+    @app.route('/admin/suppliers')
+    @login_required
+    def admin_suppliers():
+        """Admin supplier management"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        suppliers = Supplier.query.order_by(Supplier.name).all()
+        
+        return render_template('admin/suppliers.html',
+                              title='Suppliers',
+                              suppliers=suppliers)
+    
+    @app.route('/admin/suppliers/add', methods=['GET', 'POST'])
+    @login_required
+    def admin_add_supplier():
+        """Add new supplier"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        form = SupplierForm()
+        
+        if form.validate_on_submit():
+            supplier = Supplier(
+                name=form.name.data,
+                contact_name=form.contact_name.data,
+                email=form.email.data,
+                phone=form.phone.data,
+                address=form.address.data,
+                notes=form.notes.data
+            )
+            db.session.add(supplier)
+            db.session.commit()
+            
+            flash('Supplier added successfully', 'success')
+            return redirect(url_for('admin_suppliers'))
+        
+        return render_template('admin/supplier_form.html',
+                              title='Add Supplier',
+                              form=form,
+                              action='Add')
+    
+    @app.route('/admin/suppliers/edit/<int:supplier_id>', methods=['GET', 'POST'])
+    @login_required
+    def admin_edit_supplier(supplier_id):
+        """Edit supplier"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        supplier = Supplier.query.get_or_404(supplier_id)
+        form = SupplierForm(obj=supplier)
+        
+        if form.validate_on_submit():
+            supplier.name = form.name.data
+            supplier.contact_name = form.contact_name.data
+            supplier.email = form.email.data
+            supplier.phone = form.phone.data
+            supplier.address = form.address.data
+            supplier.notes = form.notes.data
+            
+            db.session.commit()
+            
+            flash('Supplier updated successfully', 'success')
+            return redirect(url_for('admin_suppliers'))
+        
+        return render_template('admin/supplier_form.html',
+                              title='Edit Supplier',
+                              form=form,
+                              action='Update')
+    
+    @app.route('/admin/suppliers/delete/<int:supplier_id>', methods=['POST'])
+    @login_required
+    def admin_delete_supplier(supplier_id):
+        """Delete supplier"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        supplier = Supplier.query.get_or_404(supplier_id)
+        
+        # Check if supplier has any purchase orders
+        if supplier.purchase_orders:
+            flash('Cannot delete supplier with associated purchase orders', 'danger')
+            return redirect(url_for('admin_suppliers'))
+        
+        db.session.delete(supplier)
+        db.session.commit()
+        
+        flash('Supplier deleted successfully', 'success')
+        return redirect(url_for('admin_suppliers'))
+    
+    @app.route('/admin/purchase-orders')
+    @login_required
+    def admin_purchase_orders():
+        """Admin purchase order management"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        # Get query parameters
+        status = request.args.get('status')
+        supplier_id = request.args.get('supplier_id', type=int)
+        
+        # Base query
+        query = PurchaseOrder.query
+        
+        # Apply filters if provided
+        if status:
+            query = query.filter_by(status=status)
+        
+        if supplier_id:
+            query = query.filter_by(supplier_id=supplier_id)
+        
+        # Get purchase orders
+        purchase_orders = query.order_by(PurchaseOrder.created_at.desc()).all()
+        
+        # Get all suppliers for filter dropdown
+        suppliers = Supplier.query.order_by(Supplier.name).all()
+        
+        return render_template('admin/purchase_orders.html',
+                              title='Purchase Orders',
+                              purchase_orders=purchase_orders,
+                              suppliers=suppliers,
+                              selected_status=status,
+                              selected_supplier=supplier_id)
+    
+    @app.route('/admin/purchase-orders/add', methods=['GET', 'POST'])
+    @login_required
+    def admin_add_purchase_order():
+        """Add new purchase order"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        # Check if there are suppliers
+        suppliers_count = Supplier.query.count()
+        if suppliers_count == 0:
+            flash('Please add at least one supplier before creating a purchase order', 'warning')
+            return redirect(url_for('admin_add_supplier'))
+        
+        form = PurchaseOrderForm()
+        
+        if form.validate_on_submit():
+            # Create new purchase order
+            po = PurchaseOrder(
+                po_number=PurchaseOrder.generate_po_number(),
+                supplier_id=form.supplier_id.data,
+                status=form.status.data,
+                expected_delivery_date=form.expected_delivery_date.data,
+                notes=form.notes.data,
+                created_by=current_user.id
+            )
+            
+            if form.status.data == 'ordered':
+                po.order_date = datetime.utcnow()
+            
+            db.session.add(po)
+            db.session.commit()
+            
+            flash('Purchase order created successfully', 'success')
+            return redirect(url_for('admin_edit_purchase_order', po_id=po.id))
+        
+        return render_template('admin/purchase_order_form.html',
+                              title='Create Purchase Order',
+                              form=form,
+                              action='Create')
+    
+    @app.route('/admin/purchase-orders/edit/<int:po_id>', methods=['GET', 'POST'])
+    @login_required
+    def admin_edit_purchase_order(po_id):
+        """Edit purchase order"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        po = PurchaseOrder.query.get_or_404(po_id)
+        form = PurchaseOrderForm(obj=po)
+        item_form = PurchaseOrderItemForm()
+        
+        # Handle main form submission
+        if form.is_submitted() and form.validate() and 'submit' in request.form:
+            old_status = po.status
+            
+            po.supplier_id = form.supplier_id.data
+            po.expected_delivery_date = form.expected_delivery_date.data
+            po.notes = form.notes.data
+            po.status = form.status.data
+            
+            # Set order date if status changed to ordered
+            if old_status != 'ordered' and form.status.data == 'ordered':
+                po.order_date = datetime.utcnow()
+            
+            db.session.commit()
+            
+            flash('Purchase order updated successfully', 'success')
+            return redirect(url_for('admin_purchase_orders'))
+        
+        # Handle item form submission
+        if item_form.is_submitted() and item_form.validate() and 'add_item' in request.form:
+            # Add new item to purchase order
+            item = PurchaseOrderItem(
+                purchase_order_id=po.id,
+                product_id=item_form.product_id.data,
+                quantity_ordered=item_form.quantity_ordered.data,
+                unit_price=item_form.unit_price.data
+            )
+            db.session.add(item)
+            
+            # Update total amount
+            po.total_amount = sum(item.quantity_ordered * item.unit_price for item in po.items) + item.quantity_ordered * item.unit_price
+            
+            db.session.commit()
+            
+            flash('Item added to purchase order', 'success')
+            return redirect(url_for('admin_edit_purchase_order', po_id=po.id))
+        
+        return render_template('admin/purchase_order_detail.html',
+                              title='Edit Purchase Order',
+                              po=po,
+                              form=form,
+                              item_form=item_form)
+    
+    @app.route('/admin/purchase-orders/delete/<int:po_id>', methods=['POST'])
+    @login_required
+    def admin_delete_purchase_order(po_id):
+        """Delete purchase order"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        po = PurchaseOrder.query.get_or_404(po_id)
+        
+        # Only allow deletion of draft purchase orders
+        if po.status != 'draft':
+            flash('Can only delete draft purchase orders', 'danger')
+            return redirect(url_for('admin_purchase_orders'))
+        
+        db.session.delete(po)
+        db.session.commit()
+        
+        flash('Purchase order deleted successfully', 'success')
+        return redirect(url_for('admin_purchase_orders'))
+    
+    @app.route('/admin/purchase-orders/item/delete/<int:item_id>', methods=['POST'])
+    @login_required
+    def admin_delete_purchase_order_item(item_id):
+        """Delete purchase order item"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        item = PurchaseOrderItem.query.get_or_404(item_id)
+        po_id = item.purchase_order_id
+        
+        # Check if purchase order is in draft status
+        if item.purchase_order.status != 'draft':
+            flash('Cannot modify items in a purchase order that is not in draft status', 'danger')
+            return redirect(url_for('admin_edit_purchase_order', po_id=po_id))
+        
+        db.session.delete(item)
+        
+        # Update total amount
+        po = item.purchase_order
+        po.total_amount = sum(item.quantity_ordered * item.unit_price for item in po.items)
+        
+        db.session.commit()
+        
+        flash('Item removed from purchase order', 'success')
+        return redirect(url_for('admin_edit_purchase_order', po_id=po_id))
+    
+    @app.route('/admin/purchase-orders/receive/<int:po_id>', methods=['GET', 'POST'])
+    @login_required
+    def admin_receive_purchase_order(po_id):
+        """Receive purchase order items"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        po = PurchaseOrder.query.get_or_404(po_id)
+        
+        # Check if purchase order is in 'ordered' status
+        if po.status != 'ordered':
+            flash('Can only receive purchase orders with "ordered" status', 'warning')
+            return redirect(url_for('admin_edit_purchase_order', po_id=po_id))
+        
+        form = ReceivePurchaseOrderForm()
+        
+        # Create a form for each item
+        item_forms = {}
+        for item in po.items:
+            item_form = ReceiveItemForm(prefix=f'item_{item.id}')
+            item_form.quantity_received.data = item.quantity_ordered - item.quantity_received
+            item_forms[item.id] = item_form
+        
+        if form.validate_on_submit():
+            all_received = True
+            
+            # Process each item
+            for item in po.items:
+                item_form = ReceiveItemForm(prefix=f'item_{item.id}')
+                
+                if item_form.validate():
+                    quantity_received = item_form.quantity_received.data
+                    
+                    if quantity_received > 0:
+                        # Update the item
+                        item.quantity_received += quantity_received
+                        
+                        # Update product stock
+                        product = item.product
+                        log_data = product.adjust_stock(
+                            quantity_received, 
+                            "Purchase Order Received", 
+                            current_user.id,
+                            f"PO #{po.po_number}"
+                        )
+                        
+                        # Create inventory log
+                        log = InventoryLog(**log_data)
+                        db.session.add(log)
+                    
+                    # Check if all items are fully received
+                    if item.quantity_received < item.quantity_ordered:
+                        all_received = False
+            
+            # Update purchase order status if all items are received
+            if all_received:
+                po.status = 'received'
+            
+            # Set delivery date
+            po.delivery_date = form.delivery_date.data
+            
+            db.session.commit()
+            
+            flash('Items received successfully', 'success')
+            return redirect(url_for('admin_purchase_orders'))
+        
+        return render_template('admin/receive_purchase_order.html',
+                              title='Receive Purchase Order',
+                              po=po,
+                              form=form,
+                              item_forms=item_forms)
     
     # API routes for AJAX requests
     @app.route('/api/cart/count')
