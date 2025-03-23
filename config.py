@@ -1,10 +1,11 @@
+
 import os
 from datetime import timedelta
 
 class Config:
     """Base configuration"""
     SECRET_KEY = os.environ.get('SESSION_SECRET', 'dev-secret-key')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///ecommerce.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'mysql://user:password@localhost/ecommerce')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     REMEMBER_COOKIE_DURATION = timedelta(days=14)
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload size
