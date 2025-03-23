@@ -16,6 +16,56 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Popover(popoverTriggerEl);
     });
     
+    // Secret admin access with keyboard shortcut (Ctrl+Shift+A)
+    let keySequence = [];
+    const adminAccessLink = document.getElementById('admin-access-link');
+    
+    // Track key presses for admin access
+    document.addEventListener('keydown', function(e) {
+        // Check for Ctrl+Shift+A combination
+        if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
+            e.preventDefault();
+            
+            // Make admin access link visible and highlight it
+            if (adminAccessLink) {
+                adminAccessLink.classList.remove('d-none');
+                adminAccessLink.classList.add('admin-access-visible');
+                adminAccessLink.style.animation = 'pulse 1s infinite';
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    adminAccessLink.classList.add('d-none');
+                    adminAccessLink.classList.remove('admin-access-visible');
+                    adminAccessLink.style.animation = '';
+                }, 5000);
+            }
+        }
+        
+        // Another method: Track secret key sequence "admin"
+        keySequence.push(e.key.toLowerCase());
+        if (keySequence.length > 5) {
+            keySequence.shift();
+        }
+        
+        // Check if the sequence spells "admin"
+        if (keySequence.join('') === 'admin') {
+            if (adminAccessLink) {
+                adminAccessLink.classList.remove('d-none');
+                adminAccessLink.classList.add('admin-access-visible');
+                adminAccessLink.style.animation = 'pulse 1s infinite';
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    adminAccessLink.classList.add('d-none');
+                    adminAccessLink.classList.remove('admin-access-visible');
+                    adminAccessLink.style.animation = '';
+                    // Reset the sequence
+                    keySequence = [];
+                }, 5000);
+            }
+        }
+    });
+    
     // Handle promotion countdown if promotion banner exists
     const promotionBanner = document.querySelector('.promotion-banner');
     if (promotionBanner) {
