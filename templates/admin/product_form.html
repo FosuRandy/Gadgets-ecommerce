@@ -42,7 +42,7 @@
                 </ul>
             </div>
         </div>
-        
+
         <!-- Main Content -->
         <div class="col-lg-10 col-md-9 admin-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -51,12 +51,12 @@
                     <i class="fas fa-arrow-left me-2"></i> Back to Products
                 </a>
             </div>
-            
+
             <div class="card">
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('admin_add_product') if action == 'Add' else url_for('admin_edit_product', product_id=product.id) }}">
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('admin_add_product') if action == 'Add' else url_for('admin_edit_product', product_id=product.id) }}">
                         {{ form.hidden_tag() }}
-                        
+
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="mb-3">
@@ -72,7 +72,7 @@
                                         {{ form.name(class="form-control") }}
                                     {% endif %}
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     {{ form.description.label(class="form-label") }}
                                     {% if form.description.errors %}
@@ -86,7 +86,7 @@
                                         {{ form.description(class="form-control", rows=5) }}
                                     {% endif %}
                                 </div>
-                                
+
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         {{ form.price.label(class="form-label") }}
@@ -101,7 +101,7 @@
                                             {{ form.price(class="form-control") }}
                                         {% endif %}
                                     </div>
-                                    
+
                                     <div class="col-md-6 mb-3">
                                         {{ form.stock.label(class="form-label") }}
                                         {% if form.stock.errors %}
@@ -116,7 +116,7 @@
                                         {% endif %}
                                     </div>
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     {{ form.category.label(class="form-label") }}
                                     {% if form.category.errors %}
@@ -130,23 +130,28 @@
                                         {{ form.category(class="form-select") }}
                                     {% endif %}
                                 </div>
-                                
+
                                 <div class="mb-3">
-                                    {{ form.image_url.label(class="form-label") }}
-                                    {% if form.image_url.errors %}
-                                        {{ form.image_url(class="form-control is-invalid", id="image_url") }}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.image_url.errors %}
-                                                {{ error }}
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        {{ form.image_url(class="form-control", id="image_url") }}
+                                    <label class="form-label">Product Image</label>
+                                    <div class="mb-2">
+                                        {{ form.image_url.label(class="form-label") }}
+                                        {{ form.image_url(class="form-control") }}
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="text-muted">OR</div>
+                                    </div>
+                                    <div>
+                                        {{ form.image_file.label(class="form-label") }}
+                                        {{ form.image_file(class="form-control") }}
+                                    </div>
+                                    {% if product and product.image_url %}
+                                    <div class="mt-2">
+                                        <img src="{{ product.image_url }}" alt="Current image" class="img-thumbnail" style="max-height: 200px">
+                                    </div>
                                     {% endif %}
-                                    <small class="form-text text-muted">Enter a valid URL for the product image</small>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-4">
                                 <div class="card">
                                     <div class="card-header">
@@ -158,7 +163,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="mt-4 d-flex justify-content-between">
                             <a href="{{ url_for('admin_products') }}" class="btn btn-secondary">Cancel</a>
                             {{ form.submit(class="btn btn-primary") }}

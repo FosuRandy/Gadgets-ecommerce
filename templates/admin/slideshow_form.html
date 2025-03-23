@@ -42,7 +42,7 @@
                 </ul>
             </div>
         </div>
-        
+
         <!-- Main Content -->
         <div class="col-lg-10 col-md-9 admin-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -51,12 +51,12 @@
                     <i class="fas fa-arrow-left me-2"></i> Back to Slideshow
                 </a>
             </div>
-            
+
             <div class="card">
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('admin_add_slide') if action == 'Add' else url_for('admin_edit_slide', slide_id=slide.id) }}">
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('admin_add_slide') if action == 'Add' else url_for('admin_edit_slide', slide_id=slide.id) }}">
                         {{ form.hidden_tag() }}
-                        
+
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="mb-3">
@@ -72,7 +72,7 @@
                                         {{ form.title(class="form-control") }}
                                     {% endif %}
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     {{ form.subtitle.label(class="form-label") }}
                                     {% if form.subtitle.errors %}
@@ -87,22 +87,27 @@
                                     {% endif %}
                                     <small class="form-text text-muted">Optional subtitle text to display on the slide</small>
                                 </div>
-                                
+
                                 <div class="mb-3">
-                                    {{ form.image_url.label(class="form-label") }}
-                                    {% if form.image_url.errors %}
-                                        {{ form.image_url(class="form-control is-invalid", id="image_url") }}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.image_url.errors %}
-                                                {{ error }}
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        {{ form.image_url(class="form-control", id="image_url") }}
+                                    <label class="form-label">Slide Image</label>
+                                    <div class="mb-2">
+                                        {{ form.image_url.label(class="form-label") }}
+                                        {{ form.image_url(class="form-control") }}
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="text-muted">OR</div>
+                                    </div>
+                                    <div>
+                                        {{ form.image_file.label(class="form-label") }}
+                                        {{ form.image_file(class="form-control") }}
+                                    </div>
+                                    {% if slide and slide.image_url %}
+                                    <div class="mt-2">
+                                        <img src="{{ slide.image_url }}" alt="Current image" class="img-thumbnail" style="max-height: 200px">
+                                    </div>
                                     {% endif %}
-                                    <small class="form-text text-muted">Enter a valid URL for the slide image (recommended size: 1200x600px)</small>
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     {{ form.link_url.label(class="form-label") }}
                                     {% if form.link_url.errors %}
@@ -117,7 +122,7 @@
                                     {% endif %}
                                     <small class="form-text text-muted">Optional URL to link to when the slide is clicked</small>
                                 </div>
-                                
+
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         {{ form.display_order.label(class="form-label") }}
@@ -133,7 +138,7 @@
                                         {% endif %}
                                         <small class="form-text text-muted">Lower numbers appear first</small>
                                     </div>
-                                    
+
                                     <div class="col-md-6 mb-3 d-flex align-items-end">
                                         <div class="form-check mt-4 w-100">
                                             {{ form.is_active(class="form-check-input") }}
@@ -142,7 +147,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-4">
                                 <div class="card">
                                     <div class="card-header">
@@ -154,7 +159,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="mt-4 d-flex justify-content-between">
                             <a href="{{ url_for('admin_slideshow') }}" class="btn btn-secondary">Cancel</a>
                             {{ form.submit(class="btn btn-primary") }}
