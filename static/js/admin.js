@@ -200,3 +200,51 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+// Mobile Navigation
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileToggle = document.querySelector('.mobile-nav-toggle');
+    const sidebar = document.getElementById('adminSidebar');
+    
+    if (mobileToggle && sidebar) {
+        mobileToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+        });
+        
+        // Close sidebar when clicking outside
+        document.addEventListener('click', function(e) {
+            if (sidebar.classList.contains('active') && 
+                !sidebar.contains(e.target) && 
+                !mobileToggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+    }
+    
+    // Image preview functionality
+    const imageUrlInputs = document.querySelectorAll('input[type="url"][id$="image_url"]');
+    const imageFileInputs = document.querySelectorAll('input[type="file"][id$="image_file"]');
+    
+    imageUrlInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const preview = document.getElementById('image-preview');
+            if (preview && this.value) {
+                preview.src = this.value;
+                preview.style.display = 'block';
+            }
+        });
+    });
+    
+    imageFileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const preview = document.getElementById('image-preview');
+            if (preview && this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    });
+});

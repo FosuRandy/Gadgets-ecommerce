@@ -1357,3 +1357,43 @@ def register_routes(app):
         """Get current cart count for AJAX requests"""
         count = CartItem.query.filter_by(user_id=current_user.id).count()
         return jsonify({'count': count})
+def save_image(file):
+    """Save uploaded image and return its URL"""
+    if not file:
+        return None
+    
+    filename = secure_filename(file.filename)
+    file_path = os.path.join('static', 'uploads', filename)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    file.save(file_path)
+    return '/' + file_path
+
+@app.route('/admin/products/add', methods=['GET', 'POST'])
+@login_required
+def admin_add_product():
+    if not current_user.is_admin():
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+    
+    form = ProductForm()
+    if form.validate_on_submit():
+        image_url = form.image_url.data
+        if form.image_file.data:
+            image_url = save_image(form.image_file.data)
+            
+        product = Product(
+            name=form.name.data,
+            description=form.description.data,
+            price=form.price.data,
+            stock=form.stock.data,
+            image_url=image_url,
+            category=form.category.data
+        )
+        db.session.add(product)
+        db.session.commit()
+        flash('Product added successfully', 'success')
+        return redirect(url_for('admin_products'))
+    
+    return render_template('admin/product_form.html',
+                          title='Add Product',
+                          form=form)

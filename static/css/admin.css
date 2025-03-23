@@ -1,0 +1,65 @@
+
+/* Admin Dashboard Styles */
+.admin-sidebar {
+    background: #2c3e50;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+.admin-sidebar .nav-link {
+    color: #ecf0f1;
+    padding: 10px 15px;
+    transition: all 0.3s;
+}
+
+.admin-sidebar .nav-link:hover {
+    background: #34495e;
+}
+
+.admin-content {
+    padding: 20px;
+}
+
+.stats-card {
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stats-card i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        position: fixed;
+        left: -250px;
+        width: 250px;
+        z-index: 1000;
+        height: 100vh;
+    }
+
+    .admin-sidebar.active {
+        left: 0;
+    }
+
+    .admin-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .mobile-nav-toggle {
+        display: block;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1001;
+    }
+}
+
+.mobile-nav-toggle {
+    display: none;
+}

@@ -32,7 +32,8 @@ class ProductForm(FlaskForm):
     description = TextAreaField('Description', validators=[DataRequired()])
     price = FloatField('Price (GH₵)', validators=[DataRequired(), NumberRange(min=0)])
     stock = IntegerField('Stock Quantity', validators=[DataRequired(), NumberRange(min=0)])
-    image_url = StringField('Image URL', validators=[DataRequired(), URL()])
+    image_url = StringField('Image URL')
+    image_file = FileField('Image File', validators=[Optional()])
     category = SelectField('Category', validators=[DataRequired()], choices=[
         ('camera', 'Camera Equipment'),
         ('audio', 'Audio Equipment'),
@@ -67,7 +68,8 @@ class PromotionForm(FlaskForm):
 class SlideshowForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=100)])
     subtitle = StringField('Subtitle', validators=[Optional(), Length(max=200)])
-    image_url = StringField('Image URL', validators=[DataRequired(), URL()])
+    image_url = StringField('Image URL')
+    image_file = FileField('Image File', validators=[Optional()])
     link_url = StringField('Link URL', validators=[Optional(), URL()])
     display_order = IntegerField('Display Order', validators=[DataRequired(), NumberRange(min=0)])
     is_active = BooleanField('Active')
