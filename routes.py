@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 from app import db, login_manager
 from models import User, Product, CartItem, Order, OrderItem, Promotion, Slideshow, InventoryLog, Supplier, PurchaseOrder, PurchaseOrderItem
 from forms import (RegistrationForm, LoginForm, ProductForm, CheckoutForm, 
-                  OrderTrackingForm, PromotionForm, SlideshowForm)
+                  OrderTrackingForm, PromotionForm, SlideshowForm, UserManagementForm)
 from utils import (send_order_confirmation_email, verify_paystack_transaction, 
                  get_active_promotion, apply_promotion_to_price)
 
@@ -1240,6 +1240,75 @@ def register_routes(app):
                               form=form,
                               item_forms=item_forms)
     
+    @app.route('/admin/users')
+    @login_required
+    def admin_users():
+        """Admin user management"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        users = User.query.order_by(User.created_at.desc()).all()
+        
+        return render_template('admin/users.html',
+                              title='Manage Users',
+                              users=users)
+    
+    @app.route('/admin/users/edit/<int:user_id>', methods=['GET', 'POST'])
+    @login_required
+    def admin_edit_user(user_id):
+        """Edit user"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        user = User.query.get_or_404(user_id)
+        form = UserManagementForm(obj=user)
+        
+        if form.validate_on_submit():
+            user.username = form.username.data
+            user.email = form.email.data
+            user.role = form.role.data
+            
+            # Update password only if provided
+            if form.password.data:
+                user.set_password(form.password.data)
+            
+            db.session.commit()
+            flash('User updated successfully', 'success')
+            return redirect(url_for('admin_users'))
+        
+        return render_template('admin/user_form.html',
+                              title='Edit User',
+                              form=form,
+                              user=user)
+    
+    @app.route('/admin/users/delete/<int:user_id>', methods=['POST'])
+    @login_required
+    def admin_delete_user(user_id):
+        """Delete user"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        # Prevent deleting yourself
+        if user_id == current_user.id:
+            flash('You cannot delete your own account', 'danger')
+            return redirect(url_for('admin_users'))
+        
+        user = User.query.get_or_404(user_id)
+        
+        # Delete associated records
+        CartItem.query.filter_by(user_id=user.id).delete()
+        
+        # Note: We're not deleting orders to preserve order history
+        # Just proceed with user deletion
+        db.session.delete(user)
+        db.session.commit()
+        
+        flash('User deleted successfully', 'success')
+        return redirect(url_for('admin_users'))
+        
     # API routes for AJAX requests
     @app.route('/api/cart/count')
     @login_required
