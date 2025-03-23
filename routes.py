@@ -1253,6 +1253,47 @@ def register_routes(app):
         return render_template('admin/users.html',
                               title='Manage Users',
                               users=users)
+                              
+    @app.route('/admin/users/add', methods=['GET', 'POST'])
+    @login_required
+    def admin_add_user():
+        """Add new user"""
+        if not current_user.is_admin():
+            flash('Access denied. Admin privileges required.', 'danger')
+            return redirect(url_for('index'))
+        
+        form = UserManagementForm()
+        
+        if form.validate_on_submit():
+            # Check if username or email already exists
+            if User.query.filter_by(username=form.username.data).first():
+                flash('Username already exists. Please choose a different username.', 'danger')
+                return render_template('admin/user_form.html', title='Add User', form=form)
+                
+            if User.query.filter_by(email=form.email.data).first():
+                flash('Email already exists. Please use a different email address.', 'danger')
+                return render_template('admin/user_form.html', title='Add User', form=form)
+            
+            # Create new user
+            user = User(
+                username=form.username.data,
+                email=form.email.data,
+                role=form.role.data
+            )
+            
+            # Set password
+            user.set_password(form.password.data)
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            flash('User added successfully', 'success')
+            return redirect(url_for('admin_users'))
+        
+        return render_template('admin/user_form.html',
+                              title='Add User',
+                              form=form,
+                              user=None)
     
     @app.route('/admin/users/edit/<int:user_id>', methods=['GET', 'POST'])
     @login_required
