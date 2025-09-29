@@ -304,36 +304,196 @@ def apply_promotion_to_price(price, promotion):
     discount = price * (promotion.discount_percent / 100)
     return price - discount
 
+def initialize_rbac_system():
+    """Initialize the Role-Based Access Control system"""
+    from models import Role, Permission, RoleAssignment, User
+    
+    # Create permissions
+    permissions_data = [
+        # Product management
+        ('product_create', 'Create products', 'product', 'create'),
+        ('product_read', 'View products', 'product', 'read'),
+        ('product_update', 'Edit products', 'product', 'update'),
+        ('product_delete', 'Delete products', 'product', 'delete'),
+        ('product_approve', 'Approve products', 'product', 'approve'),
+        
+        # Order management
+        ('order_create', 'Create orders', 'order', 'create'),
+        ('order_read', 'View orders', 'order', 'read'),
+        ('order_update', 'Update order status', 'order', 'update'),
+        ('order_delete', 'Cancel orders', 'order', 'delete'),
+        
+        # User management
+        ('user_create', 'Create users', 'user', 'create'),
+        ('user_read', 'View users', 'user', 'read'),
+        ('user_update', 'Edit users', 'user', 'update'),
+        ('user_delete', 'Delete users', 'user', 'delete'),
+        ('user_ban', 'Ban/suspend users', 'user', 'ban'),
+        
+        # Financial operations
+        ('finance_refund', 'Issue refunds', 'finance', 'refund'),
+        ('finance_commission', 'Manage commissions', 'finance', 'commission'),
+        ('finance_reports', 'View financial reports', 'finance', 'reports'),
+        
+        # System administration
+        ('system_config', 'System configuration', 'system', 'config'),
+        ('system_analytics', 'View analytics', 'system', 'analytics'),
+        ('system_audit', 'View audit logs', 'system', 'audit'),
+        
+        # Seller/Vendor management
+        ('seller_approve', 'Approve sellers', 'seller', 'approve'),
+        ('seller_manage', 'Manage sellers', 'seller', 'manage'),
+    ]
+    
+    created_permissions = {}
+    for perm_data in permissions_data:
+        if not Permission.query.filter_by(name=perm_data[0]).first():
+            permission = Permission(
+                name=perm_data[0],
+                description=perm_data[1],
+                resource=perm_data[2],
+                action=perm_data[3]
+            )
+            db.session.add(permission)
+            created_permissions[perm_data[0]] = permission
+        else:
+            created_permissions[perm_data[0]] = Permission.query.filter_by(name=perm_data[0]).first()
+    
+    # Create roles with permissions
+    roles_data = {
+        'super_admin': {
+            'description': 'Full system access and control',
+            'permissions': list(created_permissions.keys())  # All permissions
+        },
+        'customer_support': {
+            'description': 'Handle customer issues and disputes',
+            'permissions': ['user_read', 'user_update', 'user_ban', 'order_read', 'order_update', 'product_read']
+        },
+        'finance_manager': {
+            'description': 'Manage payments, refunds, and financial operations',
+            'permissions': ['finance_refund', 'finance_commission', 'finance_reports', 'order_read', 'user_read']
+        },
+        'product_moderator': {
+            'description': 'Approve and manage products and sellers',
+            'permissions': ['product_read', 'product_approve', 'product_update', 'seller_approve', 'seller_manage', 'user_read']
+        },
+        'seller': {
+            'description': 'Manage own products and orders',
+            'permissions': ['product_create', 'product_read', 'product_update', 'order_read']
+        }
+    }
+    
+    for role_name, role_info in roles_data.items():
+        if not Role.query.filter_by(name=role_name).first():
+            role = Role(name=role_name, description=role_info['description'])
+            db.session.add(role)
+            db.session.flush()  # Get the role ID
+            
+            # Assign permissions to role
+            for perm_name in role_info['permissions']:
+                if perm_name in created_permissions:
+                    role.permissions.append(created_permissions[perm_name])
+    
+    db.session.commit()
+
 def initialize_demo_data():
     """Initialize demo data if database is empty"""
     # Only add demo data if no users exist
     if User.query.count() > 0:
         return
+    
+    # Initialize RBAC system first
+    initialize_rbac_system()
         
     # Create admin user
     admin = User(
         username="admin",
-        email="admin@example.com",
+        email="admin@gadgetstore.com",
         role="admin"
     )
     admin.set_password("admin123")
     db.session.add(admin)
+    db.session.flush()
     
-    # Create demo products
+    # Assign super_admin role to admin user
+    from models import Role, RoleAssignment
+    super_admin_role = Role.query.filter_by(name='super_admin').first()
+    if super_admin_role:
+        role_assignment = RoleAssignment(user_id=admin.id, role_id=super_admin_role.id)
+        db.session.add(role_assignment)
+    
+    # Create demo products (gadgets)
     products = [
         {
-            "name": "Professional Camera",
-            "description": "High-quality digital camera for professional photography",
-            "price": 2499.99,
-            "stock": 10,
-            "category": "camera"
+            "name": "iPhone 15 Pro",
+            "description": "Latest Apple smartphone with advanced camera system and A17 Pro chip",
+            "price": 4999.99,
+            "stock": 25,
+            "category": "smartphones",
+            "brand": "Apple",
+            "model": "iPhone 15 Pro",
+            "warranty_months": 12,
+            "condition": "new",
+            "specifications": {
+                "display": "6.1-inch Super Retina XDR",
+                "storage": "128GB",
+                "camera": "48MP Main + 12MP Ultra Wide + 12MP Telephoto",
+                "processor": "A17 Pro chip"
+            },
+            "compatibility": "iOS 17 and later"
         },
         {
-            "name": "Wireless Microphone",
-            "description": "Professional wireless microphone system",
-            "price": 299.99,
-            "stock": 15,
-            "category": "audio"
+            "name": "SanDisk Ultra 64GB USB Drive",
+            "description": "High-speed USB 3.0 flash drive with durable design",
+            "price": 29.99,
+            "stock": 100,
+            "category": "storage",
+            "brand": "SanDisk",
+            "model": "Ultra 64GB",
+            "warranty_months": 24,
+            "condition": "new",
+            "specifications": {
+                "capacity": "64GB",
+                "interface": "USB 3.0",
+                "read_speed": "130MB/s",
+                "write_speed": "20MB/s"
+            },
+            "compatibility": "Windows, Mac, Linux"
+        },
+        {
+            "name": "Xbox Wireless Controller",
+            "description": "Official Microsoft Xbox controller with haptic feedback",
+            "price": 199.99,
+            "stock": 50,
+            "category": "gaming",
+            "brand": "Microsoft",
+            "model": "Xbox Wireless Controller",
+            "warranty_months": 12,
+            "condition": "new",
+            "specifications": {
+                "connectivity": "Bluetooth, USB-C",
+                "battery": "AA batteries or rechargeable battery pack",
+                "features": "Haptic feedback, 3.5mm audio jack"
+            },
+            "compatibility": "Xbox Series X|S, Xbox One, PC, Android, iOS"
+        },
+        {
+            "name": "Anker PowerCore 10000mAh",
+            "description": "Portable power bank with fast charging technology",
+            "price": 79.99,
+            "stock": 75,
+            "category": "charging",
+            "brand": "Anker",
+            "model": "PowerCore 10000",
+            "warranty_months": 18,
+            "condition": "new",
+            "specifications": {
+                "capacity": "10000mAh",
+                "input": "USB-C 5V/3A",
+                "output": "USB-A 5V/2.4A, USB-C 5V/3A",
+                "features": "PowerIQ technology, MultiProtect safety"
+            },
+            "compatibility": "iPhone, Android, tablets, and other USB devices"
         }
     ]
     
@@ -343,8 +503,8 @@ def initialize_demo_data():
     
     # Create demo slideshow
     slideshow = Slideshow(
-        title="Welcome to ContentCreate",
-        subtitle="Professional Equipment for Content Creators",
+        title="Welcome to GadgetStore",
+        subtitle="Your One-Stop Shop for Tech Gadgets & Accessories",
         image_url="/static/images/banner.jpg",
         display_order=1,
         is_active=True

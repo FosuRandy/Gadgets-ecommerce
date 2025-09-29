@@ -35,12 +35,28 @@ class ProductForm(FlaskForm):
     image_url = StringField('Image URL')
     image_file = FileField('Image File', validators=[Optional()])
     category = SelectField('Category', validators=[DataRequired()], choices=[
-        ('camera', 'Camera Equipment'),
-        ('audio', 'Audio Equipment'),
-        ('lighting', 'Lighting Equipment'),
-        ('software', 'Software & Plugins'),
-        ('accessories', 'Accessories')
+        ('smartphones', 'Smartphones'),
+        ('storage', 'Storage Devices (USB/Pendrives)'),
+        ('gaming', 'Game Controllers & Gaming'),
+        ('audio', 'Audio Accessories'),
+        ('charging', 'Charging & Power'),
+        ('cables', 'Cables & Adapters'),
+        ('cases', 'Cases & Protection'),
+        ('accessories', 'Other Accessories')
     ])
+    
+    # Gadget-specific fields
+    brand = StringField('Brand', validators=[Optional(), Length(max=100)])
+    model = StringField('Model', validators=[Optional(), Length(max=100)])
+    warranty_months = IntegerField('Warranty (Months)', validators=[Optional(), NumberRange(min=0, max=120)], default=12)
+    compatibility = TextAreaField('Compatibility', validators=[Optional()], description='Compatible devices/systems')
+    condition = SelectField('Condition', validators=[DataRequired()], choices=[
+        ('new', 'New'),
+        ('refurbished', 'Refurbished'),
+        ('used', 'Used')
+    ], default='new')
+    seller_commission = FloatField('Seller Commission (%)', validators=[Optional(), NumberRange(min=0, max=100)], default=15.0)
+    
     submit = SubmitField('Save Product')
 
 class CheckoutForm(FlaskForm):

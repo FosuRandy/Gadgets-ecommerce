@@ -119,11 +119,14 @@ def register_routes(app):
 
         # Get all categories for the filter dropdown
         categories = [
-            {'id': 'camera', 'name': 'Camera Equipment'},
-            {'id': 'audio', 'name': 'Audio Equipment'},
-            {'id': 'lighting', 'name': 'Lighting Equipment'},
-            {'id': 'software', 'name': 'Software & Plugins'},
-            {'id': 'accessories', 'name': 'Accessories'}
+            {'id': 'smartphones', 'name': 'Smartphones'},
+            {'id': 'storage', 'name': 'Storage Devices (USB/Pendrives)'},
+            {'id': 'gaming', 'name': 'Game Controllers & Gaming'},
+            {'id': 'audio', 'name': 'Audio Accessories'},
+            {'id': 'charging', 'name': 'Charging & Power'},
+            {'id': 'cables', 'name': 'Cables & Adapters'},
+            {'id': 'cases', 'name': 'Cases & Protection'},
+            {'id': 'accessories', 'name': 'Other Accessories'}
         ]
 
         # Get active promotion

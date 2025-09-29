@@ -8,17 +8,73 @@ import uuid
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    permissions = db.relationship('Permission', secondary='role_permissions', back_populates='roles')
+    user_assignments = db.relationship('RoleAssignment', backref='role', lazy=True, cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f'<Role {self.name}>'
+
+
+class Permission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    resource = db.Column(db.String(50), nullable=False)  # e.g., 'product', 'order', 'user'
+    action = db.Column(db.String(50), nullable=False)    # e.g., 'create', 'read', 'update', 'delete'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    roles = db.relationship('Role', secondary='role_permissions', back_populates='permissions')
+    
+    def __repr__(self):
+        return f'<Permission {self.name}>'
+
+
+# Association table for Role-Permission many-to-many relationship
+role_permissions = db.Table('role_permissions',
+    db.Column('role_id', db.Integer, db.ForeignKey('role.id'), primary_key=True),
+    db.Column('permission_id', db.Integer, db.ForeignKey('permission.id'), primary_key=True),
+    db.Column('created_at', db.DateTime, default=datetime.utcnow)
+)
+
+
+class RoleAssignment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
+    assigned_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relationships
+    assigner = db.relationship('User', foreign_keys=[assigned_by], lazy=True)
+    
+    def __repr__(self):
+        return f'<RoleAssignment {self.user_id}-{self.role_id}>'
+
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='customer')
+    role = db.Column(db.String(20), nullable=False, default='customer')  # Keep for backward compatibility
+    is_seller = db.Column(db.Boolean, default=False)
+    seller_status = db.Column(db.String(20), default='inactive')  # inactive, pending, approved, suspended
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime, nullable=True)
     
     # Relationships
     cart_items = db.relationship('CartItem', backref='user', lazy=True, cascade="all, delete-orphan")
     orders = db.relationship('Order', backref='user', lazy=True)
+    role_assignments = db.relationship('RoleAssignment', foreign_keys='RoleAssignment.user_id', backref='user', lazy=True, cascade="all, delete-orphan")
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -27,7 +83,28 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
     
     def is_admin(self):
-        return self.role == 'admin'
+        # Check both old and new role system for backward compatibility
+        return self.role == 'admin' or self.has_role('super_admin')
+    
+    def has_role(self, role_name):
+        """Check if user has a specific role"""
+        for assignment in self.role_assignments:
+            if assignment.is_active and assignment.role.name == role_name:
+                return True
+        return False
+    
+    def has_permission(self, permission_name):
+        """Check if user has a specific permission"""
+        for assignment in self.role_assignments:
+            if assignment.is_active:
+                for permission in assignment.role.permissions:
+                    if permission.name == permission_name:
+                        return True
+        return False
+    
+    def get_roles(self):
+        """Get list of active roles for this user"""
+        return [assignment.role for assignment in self.role_assignments if assignment.is_active]
     
     def __repr__(self):
         return f'<User {self.username}>'
@@ -43,12 +120,27 @@ class Product(db.Model):
     sku = db.Column(db.String(50), nullable=True, unique=True)
     image_url = db.Column(db.String(500), nullable=True)
     category = db.Column(db.String(50), nullable=False)
+    
+    # Gadget-specific attributes
+    brand = db.Column(db.String(100), nullable=True)
+    model = db.Column(db.String(100), nullable=True)
+    specifications = db.Column(db.JSON, nullable=True)  # Store tech specs as JSON
+    warranty_months = db.Column(db.Integer, nullable=True, default=12)
+    compatibility = db.Column(db.Text, nullable=True)  # Compatible devices/systems
+    condition = db.Column(db.String(20), nullable=False, default='new')  # new, refurbished, used
+    
+    # Seller information
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    seller_commission = db.Column(db.Float, nullable=True, default=15.0)  # Commission percentage
+    approval_status = db.Column(db.String(20), nullable=False, default='approved')  # pending, approved, rejected
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     cart_items = db.relationship('CartItem', backref='product', lazy=True)
     order_items = db.relationship('OrderItem', backref='product', lazy=True)
+    seller = db.relationship('User', backref='products_sold', foreign_keys=[seller_id], lazy=True)
     
     @property
     def is_low_stock(self):
