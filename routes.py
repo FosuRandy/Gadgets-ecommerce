@@ -10,7 +10,7 @@ from models import User, Product, CartItem, Order, OrderItem, Promotion, Slidesh
 from forms import (RegistrationForm, LoginForm, ProductForm, CheckoutForm, 
                   OrderTrackingForm, PromotionForm, SlideshowForm, UserManagementForm, StockAdjustmentForm, SupplierForm, PurchaseOrderForm, PurchaseOrderItemForm, ReceivePurchaseOrderForm, ReceiveItemForm)
 from utils import (send_order_confirmation_email, verify_paystack_transaction, 
-                 get_active_promotion, apply_promotion_to_price)
+                 get_active_promotion, apply_promotion_to_price, require_permission, require_admin)
 
 def register_routes(app):
 
@@ -438,12 +438,9 @@ def register_routes(app):
 
     # Admin routes
     @app.route('/admin')
-    @login_required
+    @require_admin()
     def admin_dashboard():
         """Admin dashboard"""
-        if not current_user.is_admin():
-            flash('Access denied. Admin privileges required.', 'danger')
-            return redirect(url_for('index'))
 
         # Get summary data
         product_count = Product.query.count()
@@ -463,12 +460,9 @@ def register_routes(app):
                               recent_orders=recent_orders)
 
     @app.route('/admin/products')
-    @login_required
+    @require_permission('product_read')
     def admin_products():
         """Admin product management"""
-        if not current_user.is_admin():
-            flash('Access denied. Admin privileges required.', 'danger')
-            return redirect(url_for('index'))
 
         products = Product.query.all()
 
@@ -477,12 +471,9 @@ def register_routes(app):
                               products=products)
 
     @app.route('/admin/products/add', methods=['GET', 'POST'])
-    @login_required
+    @require_permission('product_create')
     def admin_add_product():
         """Add new product"""
-        if not current_user.is_admin():
-            flash('Access denied. Admin privileges required.', 'danger')
-            return redirect(url_for('index'))
 
         form = ProductForm()
 
@@ -511,12 +502,9 @@ def register_routes(app):
                               action='Add')
 
     @app.route('/admin/products/edit/<int:product_id>', methods=['GET', 'POST'])
-    @login_required
+    @require_permission('product_update')
     def admin_edit_product(product_id):
         """Edit product"""
-        if not current_user.is_admin():
-            flash('Access denied. Admin privileges required.', 'danger')
-            return redirect(url_for('index'))
 
         product = Product.query.get_or_404(product_id)
         form = ProductForm(obj=product)
@@ -546,12 +534,9 @@ def register_routes(app):
                               product=product)
 
     @app.route('/admin/products/delete/<int:product_id>', methods=['POST'])
-    @login_required
+    @require_permission('product_delete')
     def admin_delete_product(product_id):
         """Delete product"""
-        if not current_user.is_admin():
-            flash('Access denied. Admin privileges required.', 'danger')
-            return redirect(url_for('index'))
 
         product = Product.query.get_or_404(product_id)
 

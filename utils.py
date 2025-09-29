@@ -2,13 +2,66 @@ import os
 import json
 import random
 import requests
+from functools import wraps
 from datetime import datetime, timedelta
-from flask import current_app, url_for
+from flask import current_app, url_for, abort, flash, redirect
+from flask_login import current_user
 from flask_mail import Message
 from app import db, mail
 from models import User, Product, Promotion, Slideshow
 
-def initialize_demo_data():
+def require_permission(permission_name):
+    """Decorator to require specific permission for route access"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Please log in to access this page.', 'warning')
+                return redirect(url_for('login'))
+            
+            if not current_user.has_permission(permission_name):
+                flash('Access denied. You do not have the required permissions.', 'danger')
+                abort(403)
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def require_role(role_name):
+    """Decorator to require specific role for route access"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Please log in to access this page.', 'warning')
+                return redirect(url_for('login'))
+            
+            if not current_user.has_role(role_name):
+                flash('Access denied. You do not have the required role.', 'danger')
+                abort(403)
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def require_admin():
+    """Decorator to require admin access (backward compatibility)"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Please log in to access this page.', 'warning')
+                return redirect(url_for('login'))
+            
+            if not (current_user.is_admin() or current_user.has_role('super_admin')):
+                flash('Access denied. Admin privileges required.', 'danger')
+                abort(403)
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def initialize_demo_data_old():
     """Initialize demo data if the database is empty"""
     # Only run if no users exist
     if User.query.count() == 0:
