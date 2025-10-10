@@ -98,10 +98,10 @@ export default function Cart() {
                         </div>
                         <div className="text-right">
                           <div className="font-bold" data-testid={`text-item-total-${item.product.id}`}>
-                            ${(parseFloat(item.product.price) * item.quantity).toFixed(2)}
+                            GH₵{(parseFloat(item.product.price) * item.quantity).toFixed(2)}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ${parseFloat(item.product.price).toFixed(2)} each
+                            GH₵{parseFloat(item.product.price).toFixed(2)} each
                           </div>
                         </div>
                       </div>
@@ -120,23 +120,23 @@ export default function Cart() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium" data-testid="text-subtotal">${totalPrice.toFixed(2)}</span>
+                  <span className="font-medium" data-testid="text-subtotal">GH₵{totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
                   <span className="font-medium" data-testid="text-shipping">
-                    {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
+                    {shipping === 0 ? "FREE" : `GH₵${shipping.toFixed(2)}`}
                   </span>
                 </div>
                 {totalPrice < 50 && (
                   <p className="text-sm text-muted-foreground">
-                    Add ${(50 - totalPrice).toFixed(2)} more for free shipping
+                    Add GH₵{(50 - totalPrice).toFixed(2)} more for free shipping
                   </p>
                 )}
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span data-testid="text-total">${total.toFixed(2)}</span>
+                    <span data-testid="text-total">GH₵{total.toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>

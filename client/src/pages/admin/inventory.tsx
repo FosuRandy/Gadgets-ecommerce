@@ -62,7 +62,7 @@ export default function AdminInventory() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-inventory-value">${totalValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold" data-testid="text-inventory-value">GH₵{totalValue.toFixed(2)}</div>
           </CardContent>
         </Card>
 

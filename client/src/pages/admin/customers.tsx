@@ -90,7 +90,7 @@ export default function AdminCustomers() {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Total Spent</p>
-                      <p className="font-bold">${customer.totalSpent.toFixed(2)}</p>
+                      <p className="font-bold">GH₵{customer.totalSpent.toFixed(2)}</p>
                     </div>
                     <Badge variant="default">Customer</Badge>
                   </div>

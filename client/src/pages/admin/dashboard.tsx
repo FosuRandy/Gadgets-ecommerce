@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   const stats = [
     {
       title: "Total Revenue",
-      value: `$${analytics.totalRevenue.toFixed(2)}`,
+      value: `GH₵${analytics.totalRevenue.toFixed(2)}`,
       change: analytics.revenueChange,
       icon: DollarSign,
       testId: "stat-revenue"
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
                     <p className="text-sm text-muted-foreground">{item.units} units sold</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">${item.revenue.toFixed(2)}</p>
+                    <p className="font-bold">GH₵{item.revenue.toFixed(2)}</p>
                   </div>
                 </div>
               ))}
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
                   >
                     {order.status}
                   </Badge>
-                  <p className="font-bold">${parseFloat(order.total).toFixed(2)}</p>
+                  <p className="font-bold">GH₵{parseFloat(order.total).toFixed(2)}</p>
                 </div>
               </div>
             ))}

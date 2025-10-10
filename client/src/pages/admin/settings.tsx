@@ -50,7 +50,7 @@ export default function AdminSettings() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="currency">Default Currency</Label>
-              <Input id="currency" defaultValue="USD" data-testid="input-currency" />
+              <Input id="currency" defaultValue="GHS (Ghana Cedis)" data-testid="input-currency" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tax-rate">Tax Rate (%)</Label>

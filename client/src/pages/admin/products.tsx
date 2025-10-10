@@ -305,7 +305,7 @@ export default function AdminProducts() {
                     <p className="text-sm text-muted-foreground">{product.category}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold">${parseFloat(product.price).toFixed(2)}</span>
+                    <span className="font-bold">GH₵{parseFloat(product.price).toFixed(2)}</span>
                     <Badge variant={product.stock > product.lowStockThreshold ? "default" : "destructive"}>
                       {product.stock} in stock
                     </Badge>

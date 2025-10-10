@@ -204,7 +204,7 @@ export default function Checkout() {
                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">${(parseFloat(item.product.price) * item.quantity).toFixed(2)}</p>
+                        <p className="font-medium">GH₵{(parseFloat(item.product.price) * item.quantity).toFixed(2)}</p>
                       </div>
                     </div>
                   ))}
@@ -213,15 +213,15 @@ export default function Checkout() {
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">${totalPrice.toFixed(2)}</span>
+                    <span className="font-medium">GH₵{totalPrice.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span className="font-medium">{shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}</span>
+                    <span className="font-medium">{shipping === 0 ? "FREE" : `GH₵${shipping.toFixed(2)}`}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold pt-2 border-t">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>GH₵{total.toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>

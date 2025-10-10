@@ -106,7 +106,7 @@ export default function AdminOrders() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-xl font-bold">${parseFloat(order.total).toFixed(2)}</p>
+                    <p className="text-xl font-bold">GH₵{parseFloat(order.total).toFixed(2)}</p>
                     <p className="text-sm text-muted-foreground">
                       {JSON.parse(order.items).length} items
                     </p>
@@ -195,7 +195,7 @@ export default function AdminOrders() {
                         <p className="font-medium">{item.productName}</p>
                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                       </div>
-                      <p className="font-bold">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                      <p className="font-bold">GH₵{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
                     </div>
                   ))}
                 </div>
@@ -204,15 +204,15 @@ export default function AdminOrders() {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${parseFloat(selectedOrder.subtotal).toFixed(2)}</span>
+                  <span>GH₵{parseFloat(selectedOrder.subtotal).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span>${parseFloat(selectedOrder.shipping).toFixed(2)}</span>
+                  <span>GH₵{parseFloat(selectedOrder.shipping).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Total</span>
-                  <span>${parseFloat(selectedOrder.total).toFixed(2)}</span>
+                  <span>GH₵{parseFloat(selectedOrder.total).toFixed(2)}</span>
                 </div>
               </div>
             </div>

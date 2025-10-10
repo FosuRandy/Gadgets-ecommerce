@@ -273,12 +273,12 @@ export default function AdminPromotions() {
                   <div>
                     <p className="text-muted-foreground">Value</p>
                     <p className="font-medium">
-                      {promo.type === "percentage" ? `${promo.value}%` : `$${parseFloat(promo.value).toFixed(2)}`}
+                      {promo.type === "percentage" ? `${promo.value}%` : `GH₵${parseFloat(promo.value).toFixed(2)}`}
                     </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Min Purchase</p>
-                    <p className="font-medium">${parseFloat(promo.minPurchase || "0").toFixed(2)}</p>
+                    <p className="font-medium">GH₵{parseFloat(promo.minPurchase || "0").toFixed(2)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Used</p>

@@ -78,11 +78,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold" data-testid={`text-price-${product.id}`}>
-              ${parseFloat(product.price).toFixed(2)}
+              GH₵{parseFloat(product.price).toFixed(2)}
             </span>
             {hasDiscount && (
               <span className="text-sm text-muted-foreground line-through" data-testid={`text-original-price-${product.id}`}>
-                ${parseFloat(product.originalPrice!).toFixed(2)}
+                GH₵{parseFloat(product.originalPrice!).toFixed(2)}
               </span>
             )}
           </div>

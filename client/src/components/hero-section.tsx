@@ -22,7 +22,7 @@ export function HeroSection() {
               Discover Amazing Products at Unbeatable Prices
             </h1>
             <p className="text-lg md:text-xl text-white/90">
-              Shop the latest electronics, fashion, home goods and more with free shipping on orders over $50
+              Shop the latest electronics, fashion, home goods and more with free shipping on orders over GH₵50
             </p>
             <div className="flex gap-4 flex-wrap">
               <Button
@@ -56,7 +56,7 @@ export function HeroSection() {
               </div>
               <div>
                 <div className="font-semibold">Free Shipping</div>
-                <div className="text-sm text-muted-foreground">On orders over $50</div>
+                <div className="text-sm text-muted-foreground">On orders over GH₵50</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
