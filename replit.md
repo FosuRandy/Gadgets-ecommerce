@@ -66,9 +66,9 @@ Preferred communication style: Simple, everyday language.
 ### Data Storage Architecture
 
 **Database:**
-- PostgreSQL as primary database (via Drizzle ORM configuration)
-- Firebase Firestore for actual storage implementation (dual-database strategy)
-- Drizzle ORM for type-safe database queries and migrations
+- PostgreSQL as primary database via Replit's managed Neon PostgreSQL service
+- Drizzle ORM for type-safe database queries and schema management
+- Schema synchronization via `npm run db:push` command
 
 **Schema Design:**
 - **Users Table:** Email-based authentication with role-based permissions and account status
@@ -78,19 +78,20 @@ Preferred communication style: Simple, everyday language.
 
 **Data Access Pattern:**
 - Storage abstraction layer (`IStorage` interface) allowing database implementation swapping
-- FirestoreStorage implementation provides concrete data access
-- Consistent CRUD operations across all entities
+- DatabaseStorage implementation provides PostgreSQL data access via Drizzle ORM
+- Consistent CRUD operations across all entities using type-safe SQL queries
 
 **Key Design Decisions:**
-- **Abstraction Layer:** Storage interface allows switching between PostgreSQL and Firestore without changing application code
+- **Abstraction Layer:** Storage interface allows switching database implementations without changing application code
 - **JSON Fields:** Order items stored as JSON for flexibility in product configurations
 - **Soft Deletes:** User deactivation instead of deletion for data integrity
 - **Denormalization:** Order data duplicates customer info for historical accuracy
+- **Migration Strategy:** Schema-first development using Drizzle ORM with direct database push instead of manual migrations
 
 ### External Dependencies
 
 **Third-Party Services:**
-- **Firebase Admin SDK:** Firestore database integration and authentication infrastructure
+- **Replit PostgreSQL:** Managed Neon PostgreSQL database for data persistence
 - **Google Fonts:** Inter, Manrope, and JetBrains Mono for typography system
 
 **Key Libraries:**
@@ -108,6 +109,6 @@ Preferred communication style: Simple, everyday language.
 - **Replit-specific plugins:** Development banner, cartographer, and error overlay for Replit environment
 
 **Key Design Decisions:**
-- **Firebase Integration:** Used for managed database infrastructure with potential migration path to self-hosted PostgreSQL
+- **PostgreSQL First:** Using Replit's managed PostgreSQL for reliable, scalable data persistence
 - **Minimal Dependencies:** Carefully selected libraries to keep bundle size manageable
 - **Replit Optimization:** Special tooling for seamless Replit deployment and development experience
