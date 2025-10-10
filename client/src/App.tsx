@@ -5,10 +5,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CartProvider } from "@/lib/cart-context";
+import { AuthProvider } from "@/lib/auth-context";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
+import AdminLogin from "@/pages/admin/login";
 import { AdminLayout } from "@/pages/admin/layout";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminProducts from "@/pages/admin/products";
@@ -24,6 +26,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/cart" component={Cart} />
       <Route path="/checkout" component={Checkout} />
+      <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin">
         <AdminLayout>
           <AdminDashboard />
@@ -69,10 +72,12 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ThemeProvider>
-          <CartProvider>
-            <Toaster />
-            <Router />
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Toaster />
+              <Router />
+            </CartProvider>
+          </AuthProvider>
         </ThemeProvider>
       </TooltipProvider>
     </QueryClientProvider>
