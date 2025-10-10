@@ -6,10 +6,16 @@ const serviceAccount = {
   privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
 };
 
+console.log("Initializing Firebase with project:", serviceAccount.projectId);
+
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+    databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
   });
 }
 
 export const db = admin.firestore();
+db.settings({
+  ignoreUndefinedProperties: true,
+});
