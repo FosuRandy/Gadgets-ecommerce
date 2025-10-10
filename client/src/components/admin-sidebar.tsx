@@ -6,6 +6,7 @@ import {
   Settings,
   Boxes,
   Tag,
+  UserCog,
 } from "lucide-react";
 import {
   Sidebar,
@@ -18,8 +19,16 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useLocation } from "wouter";
+import { useAuth } from "@/lib/auth-context";
 
-const menuItems = [
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: any;
+  roles?: string[]; // If specified, only show for these roles
+}
+
+const menuItems: MenuItem[] = [
   {
     title: "Analytics",
     url: "/admin",
@@ -29,11 +38,13 @@ const menuItems = [
     title: "Products",
     url: "/admin/products",
     icon: Package,
+    roles: ["super_admin", "vendor"], // Only super admins and vendors can manage products
   },
   {
     title: "Inventory",
     url: "/admin/inventory",
     icon: Boxes,
+    roles: ["super_admin", "vendor"],
   },
   {
     title: "Orders",
@@ -44,11 +55,19 @@ const menuItems = [
     title: "Customers",
     url: "/admin/customers",
     icon: Users,
+    roles: ["super_admin", "support_agent"],
   },
   {
     title: "Promotions",
     url: "/admin/promotions",
     icon: Tag,
+    roles: ["super_admin"],
+  },
+  {
+    title: "User Management",
+    url: "/admin/users",
+    icon: UserCog,
+    roles: ["super_admin"],
   },
   {
     title: "Settings",
@@ -59,6 +78,12 @@ const menuItems = [
 
 export function AdminSidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
+
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (!item.roles) return true; // Show to all if no roles specified
+    return user && item.roles.includes(user.role);
+  });
 
   return (
     <Sidebar>
@@ -67,12 +92,12 @@ export function AdminSidebar() {
           <SidebarGroupLabel>Admin Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {visibleMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
-                    data-testid={`link-admin-${item.title.toLowerCase()}`}
+                    data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     <a href={item.url}>
                       <item.icon />

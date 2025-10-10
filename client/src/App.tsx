@@ -19,6 +19,7 @@ import AdminOrders from "@/pages/admin/orders";
 import AdminCustomers from "@/pages/admin/customers";
 import AdminPromotions from "@/pages/admin/promotions";
 import AdminSettings from "@/pages/admin/settings";
+import AdminUsers from "@/pages/admin/users";
 
 function Router() {
   return (
@@ -60,6 +61,11 @@ function Router() {
       <Route path="/admin/settings">
         <AdminLayout>
           <AdminSettings />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/users">
+        <AdminLayout>
+          <AdminUsers />
         </AdminLayout>
       </Route>
       <Route component={NotFound} />

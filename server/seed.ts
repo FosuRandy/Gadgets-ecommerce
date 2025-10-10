@@ -1,5 +1,27 @@
 import { storage } from "./storage";
-import type { InsertProduct } from "@shared/schema";
+import { hashPassword } from "./auth";
+import type { InsertProduct, InsertUser } from "@shared/schema";
+
+const defaultUsers: InsertUser[] = [
+  {
+    email: "admin@shophub.com",
+    password: "admin123",
+    name: "Super Admin",
+    role: "super_admin",
+  },
+  {
+    email: "vendor@shophub.com",
+    password: "vendor123",
+    name: "Vendor User",
+    role: "vendor",
+  },
+  {
+    email: "support@shophub.com",
+    password: "support123",
+    name: "Support Agent",
+    role: "support_agent",
+  },
+];
 
 const sampleProducts: InsertProduct[] = [
   {
@@ -133,15 +155,29 @@ export async function seedDatabase() {
   try {
     console.log("Seeding database...");
     
-    const existingProducts = await storage.getProducts();
+    // Seed default admin users
+    const existingUsers = await storage.getUsers();
+    if (existingUsers.length === 0) {
+      for (const user of defaultUsers) {
+        const hashedPassword = await hashPassword(user.password);
+        await storage.createUser({ ...user, password: hashedPassword });
+      }
+      console.log(`Seeded ${defaultUsers.length} admin users`);
+      console.log("Default login credentials:");
+      console.log("- Super Admin: admin@shophub.com / admin123");
+      console.log("- Vendor: vendor@shophub.com / vendor123");
+      console.log("- Support: support@shophub.com / support123");
+    }
     
+    // Seed products
+    const existingProducts = await storage.getProducts();
     if (existingProducts.length === 0) {
       for (const product of sampleProducts) {
         await storage.createProduct(product);
       }
       console.log(`Seeded ${sampleProducts.length} products`);
     } else {
-      console.log(`Database already contains ${existingProducts.length} products, skipping seed`);
+      console.log(`Database already contains ${existingProducts.length} products, skipping product seed`);
     }
   } catch (error) {
     console.error("Error seeding database:", error);

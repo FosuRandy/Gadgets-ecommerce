@@ -123,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/products", async (req, res) => {
+  app.post("/api/products", requireRole("super_admin", "vendor"), async (req, res) => {
     try {
       const data = insertProductSchema.parse(req.body);
       const product = await storage.createProduct(data);
@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/products/:id", async (req, res) => {
+  app.patch("/api/products/:id", requireRole("super_admin", "vendor"), async (req, res) => {
     try {
       const product = await storage.updateProduct(req.params.id, req.body);
       res.json(product);
@@ -142,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/products/:id", async (req, res) => {
+  app.delete("/api/products/:id", requireRole("super_admin"), async (req, res) => {
     try {
       await storage.deleteProduct(req.params.id);
       res.json({ success: true });
@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/orders/:id", async (req, res) => {
+  app.patch("/api/orders/:id", requireRole("super_admin", "vendor", "support_agent"), async (req, res) => {
     try {
       const order = await storage.updateOrder(req.params.id, req.body);
       res.json(order);
@@ -200,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/promotions", async (req, res) => {
+  app.post("/api/promotions", requireRole("super_admin"), async (req, res) => {
     try {
       const data = insertPromotionSchema.parse(req.body);
       const promotion = await storage.createPromotion(data);
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/promotions/:id", async (req, res) => {
+  app.delete("/api/promotions/:id", requireRole("super_admin"), async (req, res) => {
     try {
       await storage.deletePromotion(req.params.id);
       res.json({ success: true });
