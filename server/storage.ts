@@ -5,7 +5,9 @@ import type {
   Promotion, InsertPromotion,
   AnalyticsData
 } from "@shared/schema";
-import { db } from "./firestore";
+import { users, products, orders, promotions } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -34,165 +36,163 @@ export interface IStorage {
   getAnalytics(): Promise<AnalyticsData>;
 }
 
-export class FirestoreStorage implements IStorage {
+export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    const doc = await db.collection('users').doc(id).get();
-    if (!doc.exists) return undefined;
-    return { id: doc.id, ...doc.data() } as User;
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();
-    if (snapshot.empty) return undefined;
-    const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as User;
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 
   async getUsers(): Promise<User[]> {
-    const snapshot = await db.collection('users').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    return await db.select().from(users);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const docRef = db.collection('users').doc();
-    const user: Omit<User, 'id'> = {
-      ...insertUser,
-      active: true,
-      createdAt: new Date(),
-    };
-    await docRef.set(user);
-    return { id: docRef.id, ...user };
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...insertUser,
+        active: true,
+      })
+      .returning();
+    return user;
   }
 
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User> {
-    const docRef = db.collection('users').doc(id);
-    await docRef.update(updates);
-    const doc = await docRef.get();
-    return { id: doc.id, ...doc.data() } as User;
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
   }
 
   async deleteUser(id: string): Promise<void> {
-    await db.collection('users').doc(id).delete();
+    await db.delete(users).where(eq(users.id, id));
   }
 
   async getProducts(): Promise<Product[]> {
-    const snapshot = await db.collection('products').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+    return await db.select().from(products);
   }
 
   async getProduct(id: string): Promise<Product | undefined> {
-    const doc = await db.collection('products').doc(id).get();
-    if (!doc.exists) return undefined;
-    return { id: doc.id, ...doc.data() } as Product;
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product || undefined;
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const docRef = db.collection('products').doc();
-    const product: Omit<Product, 'id'> = {
-      ...insertProduct,
-      rating: "0",
-      reviewCount: 0,
-      createdAt: new Date(),
-    };
-    await docRef.set(product);
-    return { id: docRef.id, ...product };
+    const [product] = await db
+      .insert(products)
+      .values({
+        ...insertProduct,
+        rating: "0",
+        reviewCount: 0,
+      })
+      .returning();
+    return product;
   }
 
   async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product> {
-    const docRef = db.collection('products').doc(id);
-    await docRef.update(updates);
-    const doc = await docRef.get();
-    return { id: doc.id, ...doc.data() } as Product;
+    const [product] = await db
+      .update(products)
+      .set(updates)
+      .where(eq(products.id, id))
+      .returning();
+    return product;
   }
 
   async deleteProduct(id: string): Promise<void> {
-    await db.collection('products').doc(id).delete();
+    await db.delete(products).where(eq(products.id, id));
   }
 
   async getOrders(): Promise<Order[]> {
-    const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+    return await db.select().from(orders).orderBy(desc(orders.createdAt));
   }
 
   async getOrder(id: string): Promise<Order | undefined> {
-    const doc = await db.collection('orders').doc(id).get();
-    if (!doc.exists) return undefined;
-    return { id: doc.id, ...doc.data() } as Order;
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order || undefined;
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const docRef = db.collection('orders').doc();
-    const order: Omit<Order, 'id'> = {
-      ...insertOrder,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    await docRef.set(order);
+    const [order] = await db
+      .insert(orders)
+      .values(insertOrder)
+      .returning();
 
     const items = JSON.parse(insertOrder.items);
     for (const item of items) {
-      const productRef = db.collection('products').doc(item.productId);
-      const productDoc = await productRef.get();
-      if (productDoc.exists) {
-        const currentStock = productDoc.data()?.stock || 0;
-        await productRef.update({ stock: Math.max(0, currentStock - item.quantity) });
+      const [product] = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, item.productId));
+      
+      if (product) {
+        await db
+          .update(products)
+          .set({ stock: Math.max(0, product.stock - item.quantity) })
+          .where(eq(products.id, item.productId));
       }
     }
 
-    return { id: docRef.id, ...order };
+    return order;
   }
 
   async updateOrder(id: string, updates: Partial<InsertOrder>): Promise<Order> {
-    const docRef = db.collection('orders').doc(id);
-    await docRef.update({ ...updates, updatedAt: new Date() });
-    const doc = await docRef.get();
-    return { id: doc.id, ...doc.data() } as Order;
+    const [order] = await db
+      .update(orders)
+      .set({ 
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    return order;
   }
 
   async getPromotions(): Promise<Promotion[]> {
-    const snapshot = await db.collection('promotions').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Promotion));
+    return await db.select().from(promotions);
   }
 
   async getPromotion(id: string): Promise<Promotion | undefined> {
-    const doc = await db.collection('promotions').doc(id).get();
-    if (!doc.exists) return undefined;
-    return { id: doc.id, ...doc.data() } as Promotion;
+    const [promotion] = await db.select().from(promotions).where(eq(promotions.id, id));
+    return promotion || undefined;
   }
 
   async createPromotion(insertPromotion: InsertPromotion): Promise<Promotion> {
-    const docRef = db.collection('promotions').doc();
-    const promotion: Omit<Promotion, 'id'> = {
-      ...insertPromotion,
-      usageCount: 0,
-      createdAt: new Date(),
-    };
-    await docRef.set(promotion);
-    return { id: docRef.id, ...promotion };
+    const [promotion] = await db
+      .insert(promotions)
+      .values({
+        ...insertPromotion,
+        usageCount: 0,
+      })
+      .returning();
+    return promotion;
   }
 
   async deletePromotion(id: string): Promise<void> {
-    await db.collection('promotions').doc(id).delete();
+    await db.delete(promotions).where(eq(promotions.id, id));
   }
 
   async getAnalytics(): Promise<AnalyticsData> {
-    const [productsSnap, ordersSnap, usersSnap] = await Promise.all([
-      db.collection('products').get(),
-      db.collection('orders').get(),
-      db.collection('users').get(),
+    const [allProducts, allOrders, allUsers] = await Promise.all([
+      db.select().from(products),
+      db.select().from(orders),
+      db.select().from(users),
     ]);
 
-    const products = productsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-    const orders = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+    const totalRevenue = allOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
+    const totalOrders = allOrders.length;
+    const totalProducts = allProducts.length;
+    const totalCustomers = new Set(allOrders.map(o => o.customerEmail)).size;
 
-    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total), 0);
-    const totalOrders = orders.length;
-    const totalProducts = products.length;
-    const totalCustomers = new Set(orders.map(o => o.customerEmail)).size;
-
-    const salesByCategory = products.reduce((acc, product) => {
+    const salesByCategory = allProducts.reduce((acc, product) => {
       const category = product.category;
-      const revenue = orders.reduce((sum, order) => {
+      const revenue = allOrders.reduce((sum, order) => {
         const items = JSON.parse(order.items);
         const item = items.find((i: any) => i.productId === product.id);
         return sum + (item ? parseFloat(item.price) * item.quantity : 0);
@@ -207,8 +207,8 @@ export class FirestoreStorage implements IStorage {
       return acc;
     }, [] as Array<{ category: string; revenue: number }>);
 
-    const topProducts = products.map(product => {
-      const { revenue, units } = orders.reduce((acc, order) => {
+    const topProducts = allProducts.map(product => {
+      const { revenue, units } = allOrders.reduce((acc, order) => {
         const items = JSON.parse(order.items);
         const item = items.find((i: any) => i.productId === product.id);
         if (item) {
@@ -220,7 +220,7 @@ export class FirestoreStorage implements IStorage {
       return { product, revenue, units };
     }).sort((a, b) => b.revenue - a.revenue);
 
-    const lowStockProducts = products.filter(p => p.stock <= p.lowStockThreshold);
+    const lowStockProducts = allProducts.filter(p => p.stock <= p.lowStockThreshold);
 
     return {
       totalRevenue,
@@ -231,10 +231,10 @@ export class FirestoreStorage implements IStorage {
       ordersChange: 8.3,
       topProducts,
       salesByCategory,
-      recentOrders: orders.slice(0, 10),
+      recentOrders: allOrders.slice(0, 10),
       lowStockProducts,
     };
   }
 }
 
-export const storage = new FirestoreStorage();
+export const storage = new DatabaseStorage();
