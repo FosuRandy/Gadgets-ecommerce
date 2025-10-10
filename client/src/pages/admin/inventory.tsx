@@ -24,7 +24,11 @@ export default function AdminInventory() {
 
   const updateStockMutation = useMutation({
     mutationFn: ({ id, stock }: { id: string; stock: number }) =>
-      apiRequest("PATCH", `/api/products/${id}`, { stock }),
+      apiRequest(`/api/products/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stock }),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ title: "Stock updated successfully" });

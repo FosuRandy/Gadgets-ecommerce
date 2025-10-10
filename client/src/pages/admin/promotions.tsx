@@ -55,7 +55,11 @@ export default function AdminPromotions() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/promotions", data),
+    mutationFn: (data: any) => apiRequest("/api/promotions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/promotions"] });
       toast({ title: "Promotion created successfully" });
@@ -65,7 +69,9 @@ export default function AdminPromotions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/promotions/${id}`, {}),
+    mutationFn: (id: string) => apiRequest(`/api/promotions/${id}`, {
+      method: "DELETE",
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/promotions"] });
       toast({ title: "Promotion deleted successfully" });

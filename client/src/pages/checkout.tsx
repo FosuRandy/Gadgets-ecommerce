@@ -53,15 +53,19 @@ export default function Checkout() {
       const shipping = totalPrice >= 50 ? 0 : 5.99;
       const total = totalPrice + shipping;
 
-      return apiRequest("POST", "/api/orders", {
-        ...data,
-        userId: "guest",
-        items: JSON.stringify(orderItems),
-        subtotal: totalPrice.toFixed(2),
-        shipping: shipping.toFixed(2),
-        total: total.toFixed(2),
-        status: "pending",
-        paymentStatus: "pending",
+      return apiRequest("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          userId: "guest",
+          items: JSON.stringify(orderItems),
+          subtotal: totalPrice.toFixed(2),
+          shipping: shipping.toFixed(2),
+          total: total.toFixed(2),
+          status: "pending",
+          paymentStatus: "pending",
+        }),
       });
     },
     onSuccess: () => {
