@@ -10,7 +10,10 @@ import { db } from "./firestore";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<InsertUser>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
   
   getProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
@@ -45,14 +48,31 @@ export class FirestoreStorage implements IStorage {
     return { id: doc.id, ...doc.data() } as User;
   }
 
+  async getUsers(): Promise<User[]> {
+    const snapshot = await db.collection('users').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const docRef = db.collection('users').doc();
     const user: Omit<User, 'id'> = {
       ...insertUser,
+      active: true,
       createdAt: new Date(),
     };
     await docRef.set(user);
     return { id: docRef.id, ...user };
+  }
+
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User> {
+    const docRef = db.collection('users').doc(id);
+    await docRef.update(updates);
+    const doc = await docRef.get();
+    return { id: doc.id, ...doc.data() } as User;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.collection('users').doc(id).delete();
   }
 
   async getProducts(): Promise<Product[]> {

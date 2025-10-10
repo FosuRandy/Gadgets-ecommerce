@@ -1,9 +1,107 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import passport from "./auth";
+import { requireAuth, requireRole, hashPassword } from "./auth";
 import { storage } from "./storage";
-import { insertProductSchema, insertOrderSchema, insertPromotionSchema } from "@shared/schema";
+import { insertProductSchema, insertOrderSchema, insertPromotionSchema, insertUserSchema } from "@shared/schema";
+import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication routes
+  const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+  });
+
+  app.post("/api/auth/login", (req: Request, res: Response, next) => {
+    try {
+      loginSchema.parse(req.body);
+    } catch (error) {
+      return res.status(400).json({ error: "Invalid email or password format" });
+    }
+
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return res.status(500).json({ error: "Authentication failed" });
+      }
+      if (!user) {
+        return res.status(401).json({ error: info?.message || "Invalid credentials" });
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Login failed" });
+        }
+        const { password, ...userWithoutPassword } = user;
+        return res.json({ user: userWithoutPassword });
+      });
+    })(req, res, next);
+  });
+
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Logout failed" });
+      }
+      res.json({ success: true });
+    });
+  });
+
+  app.get("/api/auth/me", (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const user = req.user as any;
+    const { password, ...userWithoutPassword } = user;
+    res.json({ user: userWithoutPassword });
+  });
+
+  // User management routes (admin only)
+  app.get("/api/users", requireRole("super_admin"), async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      const usersWithoutPasswords = users.map(({ password, ...user }) => user);
+      res.json(usersWithoutPasswords);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/users", requireRole("super_admin"), async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      const hashedPassword = await hashPassword(data.password);
+      const user = await storage.createUser({ ...data, password: hashedPassword });
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create user" });
+    }
+  });
+
+  app.patch("/api/users/:id", requireRole("super_admin"), async (req, res) => {
+    try {
+      const { password, ...updates } = req.body;
+      const updateData = password 
+        ? { ...updates, password: await hashPassword(password) }
+        : updates;
+      const user = await storage.updateUser(req.params.id, updateData);
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/users/:id", requireRole("super_admin"), async (req, res) => {
+    try {
+      await storage.deleteUser(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Product routes (protected)
   app.get("/api/products", async (req, res) => {
     try {
       const products = await storage.getProducts();
