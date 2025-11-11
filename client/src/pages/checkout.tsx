@@ -28,13 +28,13 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       toast({
         title: "Login required",
         description: "Please login to proceed with checkout",
@@ -42,7 +42,7 @@ export default function Checkout() {
       });
       setLocation("/login");
     }
-  }, [isAuthenticated, setLocation, toast]);
+  }, [isAuthenticated, isLoading, setLocation, toast]);
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
