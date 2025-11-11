@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { LogIn, Lock, Mail } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -100,6 +102,24 @@ export default function Login() {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
+
+          <div className="relative my-4">
+            <Separator />
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+              OR
+            </span>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2"
+            onClick={() => window.location.href = "/api/auth/google"}
+            data-testid="button-google-signin"
+          >
+            <SiGoogle className="h-4 w-4" />
+            Continue with Google
+          </Button>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 text-sm text-center text-muted-foreground">
           <p>
