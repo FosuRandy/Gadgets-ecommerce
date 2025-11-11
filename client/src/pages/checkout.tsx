@@ -85,10 +85,63 @@ export default function Checkout() {
     },
   });
 
+  const initializePayment = async (data: CheckoutFormData) => {
+    const shipping = totalPrice >= 50 ? 0 : 5.99;
+    const total = totalPrice + shipping;
+
+    const orderItems: OrderItem[] = items.map(item => ({
+      productId: item.product.id,
+      productName: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+      image: item.product.image,
+    }));
+
+    try {
+      const response = await apiRequest("/api/paystack/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.customerEmail,
+          amount: total,
+          metadata: {
+            customerName: data.customerName,
+            customerPhone: data.customerPhone,
+            shippingAddress: data.shippingAddress,
+            items: JSON.stringify(orderItems),
+            subtotal: totalPrice.toFixed(2),
+            shipping: shipping.toFixed(2),
+            total: total.toFixed(2),
+          },
+        }),
+      });
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const onSubmit = async (data: CheckoutFormData) => {
     setIsProcessing(true);
-    await createOrderMutation.mutateAsync(data);
-    setIsProcessing(false);
+
+    try {
+      const paymentResponse = await initializePayment(data);
+
+      if (paymentResponse.status && paymentResponse.data) {
+        const paymentUrl = paymentResponse.data.authorization_url;
+        window.location.href = paymentUrl;
+      } else {
+        throw new Error("Payment initialization failed");
+      }
+    } catch (error) {
+      toast({
+        title: "Payment initialization failed",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+    }
   };
 
   if (items.length === 0) {

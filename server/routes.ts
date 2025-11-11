@@ -228,6 +228,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/paystack/initialize", async (req, res) => {
+    try {
+      if (!process.env.PAYSTACK_SECRET_KEY) {
+        return res.status(500).json({ error: "Payment system not configured" });
+      }
+
+      const { email, amount, metadata } = req.body;
+      
+      if (!email || !amount || !metadata) {
+        return res.status(400).json({ error: "Missing required payment information" });
+      }
+      
+      const response = await fetch("https://api.paystack.co/transaction/initialize", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          amount: Math.round(amount * 100),
+          metadata,
+          callback_url: `${req.protocol}://${req.get('host')}/api/paystack/callback`,
+        }),
+      });
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to initialize payment" });
+    }
+  });
+
+  app.get("/api/paystack/verify/:reference", async (req, res) => {
+    try {
+      if (!process.env.PAYSTACK_SECRET_KEY) {
+        return res.status(500).json({ error: "Payment system not configured" });
+      }
+
+      const { reference } = req.params;
+      
+      const response = await fetch(
+        `https://api.paystack.co/transaction/verify/${reference}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to verify payment" });
+    }
+  });
+
+  app.get("/api/paystack/callback", async (req, res) => {
+    const { reference } = req.query;
+    
+    if (!reference) {
+      return res.redirect("/?payment=failed");
+    }
+
+    try {
+      if (!process.env.PAYSTACK_SECRET_KEY) {
+        return res.redirect("/?payment=error");
+      }
+
+      const verifyResponse = await fetch(
+        `https://api.paystack.co/transaction/verify/${reference}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          },
+        }
+      );
+
+      const verifyData = await verifyResponse.json();
+
+      if (verifyData.status && verifyData.data.status === "success") {
+        const metadata = verifyData.data.metadata;
+        const paidAmount = verifyData.data.amount / 100;
+
+        let orderItems: any[] = [];
+        try {
+          orderItems = JSON.parse(metadata.items || "[]");
+        } catch (e) {
+          return res.redirect("/?payment=failed");
+        }
+
+        let calculatedSubtotal = 0;
+        for (const item of orderItems) {
+          const product = await storage.getProduct(item.productId);
+          if (!product) {
+            return res.redirect("/?payment=failed");
+          }
+          calculatedSubtotal += parseFloat(product.price) * item.quantity;
+        }
+
+        const calculatedShipping = calculatedSubtotal >= 50 ? 0 : 5.99;
+        const calculatedTotal = calculatedSubtotal + calculatedShipping;
+
+        if (Math.abs(calculatedTotal - paidAmount) > 0.01) {
+          console.error(`Payment amount mismatch: calculated ${calculatedTotal}, paid ${paidAmount}`);
+          return res.redirect("/?payment=failed");
+        }
+
+        const orderData = {
+          userId: "guest",
+          customerName: metadata.customerName,
+          customerEmail: verifyData.data.customer.email,
+          customerPhone: metadata.customerPhone,
+          shippingAddress: metadata.shippingAddress,
+          items: metadata.items,
+          subtotal: calculatedSubtotal.toFixed(2),
+          shipping: calculatedShipping.toFixed(2),
+          total: calculatedTotal.toFixed(2),
+          status: "confirmed",
+          paymentStatus: "paid",
+        };
+
+        await storage.createOrder(orderData);
+        res.redirect("/?payment=success");
+      } else {
+        res.redirect("/?payment=failed");
+      }
+    } catch (error) {
+      console.error("Payment callback error:", error);
+      res.redirect("/?payment=failed");
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { HeroSection } from "@/components/hero-section";
 import { ProductCard } from "@/components/product-card";
@@ -6,15 +6,49 @@ import { StorefrontHeader } from "@/components/storefront-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Product } from "@shared/schema";
+import { useCart } from "@/lib/cart-context";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const { clearCart } = useCart();
+  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
-  const categories = ["all", ...new Set(products.map(p => p.category))];
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    
+    if (paymentStatus === 'success') {
+      clearCart();
+      toast({
+        title: "Payment successful!",
+        description: "Your order has been confirmed and will be processed shortly.",
+      });
+      window.history.replaceState({}, '', '/');
+    } else if (paymentStatus === 'failed') {
+      toast({
+        title: "Payment failed",
+        description: "Your payment could not be processed. Please try again.",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, '', '/');
+    } else if (paymentStatus === 'error') {
+      toast({
+        title: "Payment error",
+        description: "A system error occurred. Please contact support.",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, '', '/');
+    }
+  }, [clearCart, toast]);
+
+  const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
   
   const filteredProducts = selectedCategory === "all" 
     ? products 
