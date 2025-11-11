@@ -43,6 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: z.string().email(),
         password: z.string().min(6),
         name: z.string().min(2),
+        phone: z.string().regex(/^\+[1-9]\d{1,14}$/, "Invalid phone number format (use E.164: +[country][number])"),
       });
 
       const data = signupSchema.parse(req.body);
@@ -57,6 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: data.email,
         password: hashedPassword,
         name: data.name,
+        phone: data.phone,
         role: "customer",
         active: true,
       });
