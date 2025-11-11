@@ -314,6 +314,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const promotion = await storage.createPromotion(data);
       res.json(promotion);
     } catch (error) {
+      console.error("Promotion validation error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid promotion data", details: error.errors });
+      }
       res.status(400).json({ error: "Invalid promotion data" });
     }
   });

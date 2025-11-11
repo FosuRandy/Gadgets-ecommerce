@@ -81,13 +81,15 @@ export default function AdminPromotions() {
 
   const onSubmit = (data: PromotionFormData) => {
     const payload = {
-      ...data,
+      code: data.code,
+      type: data.type,
       value: data.value,
       minPurchase: data.minPurchase || "0",
       maxDiscount: data.maxDiscount || null,
       usageLimit: data.usageLimit ? parseInt(data.usageLimit) : null,
-      validFrom: new Date(data.validFrom).toISOString(),
-      validUntil: new Date(data.validUntil).toISOString(),
+      validFrom: new Date(data.validFrom),
+      validUntil: new Date(data.validUntil),
+      active: data.active,
     };
     createMutation.mutate(payload);
   };
