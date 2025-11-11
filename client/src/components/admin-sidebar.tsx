@@ -18,7 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth-context";
 
 interface MenuItem {
@@ -99,10 +99,10 @@ export function AdminSidebar() {
                     isActive={location === item.url}
                     data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                   >
-                    <a href={item.url}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

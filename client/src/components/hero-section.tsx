@@ -19,10 +19,10 @@ export function HeroSection() {
         <div className="relative z-20 container mx-auto px-4 h-full flex items-center">
           <div className="max-w-2xl text-white space-y-6">
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-              Your Ultimate Gadgets Destination
+              Discover Amazing Products at Unbeatable Prices
             </h1>
             <p className="text-lg md:text-xl text-white/90">
-              Shop the latest phones, gaming gear, headsets, flash drives, and premium accessories.
+              Shop the latest electronics and more.
             </p>
             <div className="flex gap-4 flex-wrap">
               <Button

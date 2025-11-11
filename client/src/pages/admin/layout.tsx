@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Home, LogOut, User } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -101,10 +101,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </Badge>
               </div>
               <Button variant="outline" size="sm" data-testid="link-storefront" asChild>
-                <a href="/">
+                <Link href="/">
                   <Home className="h-4 w-4 mr-2" />
                   Storefront
-                </a>
+                </Link>
               </Button>
               <Button
                 variant="outline"
