@@ -1,35 +1,39 @@
 import { useQuery } from "@tanstack/react-query";
-import { Search, Mail, Phone } from "lucide-react";
-import { useState } from "react";
+import { Search, Mail, Phone, UserCircle } from "lucide-react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { Order } from "@shared/schema";
+import type { Order, User } from "@shared/schema";
 
 interface CustomerData {
+  id: string;
   name: string;
   email: string;
   phone: string;
   totalOrders: number;
   totalSpent: number;
+  createdAt: string;
+  active: boolean;
 }
 
 export default function AdminCustomers() {
   const [search, setSearch] = useState("");
 
+  const { data: customerUsers = [] } = useQuery<Omit<User, 'password'>[]>({
+    queryKey: ["/api/customers"],
+  });
+
   const { data: orders = [] } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
   });
 
-  const customers: CustomerData[] = Object.values(
-    orders.reduce((acc, order) => {
+  const customers: CustomerData[] = useMemo(() => {
+    const orderStats = orders.reduce((acc, order) => {
       const key = order.customerEmail;
       if (!acc[key]) {
         acc[key] = {
-          name: order.customerName,
-          email: order.customerEmail,
-          phone: order.customerPhone,
           totalOrders: 0,
           totalSpent: 0,
         };
@@ -37,8 +41,24 @@ export default function AdminCustomers() {
       acc[key].totalOrders++;
       acc[key].totalSpent += parseFloat(order.total);
       return acc;
-    }, {} as Record<string, CustomerData>)
-  );
+    }, {} as Record<string, { totalOrders: number; totalSpent: number }>);
+
+    return customerUsers.map(customer => {
+      const stats = orderStats[customer.email] || { totalOrders: 0, totalSpent: 0 };
+      const firstOrder = orders.find(o => o.customerEmail === customer.email);
+      
+      return {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: firstOrder?.customerPhone || 'N/A',
+        totalOrders: stats.totalOrders,
+        totalSpent: stats.totalSpent,
+        createdAt: customer.createdAt ? String(customer.createdAt) : '',
+        active: customer.active ?? true,
+      };
+    });
+  }, [customerUsers, orders]);
 
   const filteredCustomers = customers.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -65,7 +85,7 @@ export default function AdminCustomers() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {filteredCustomers.map((customer, index) => (
-          <Card key={customer.email} data-testid={`customer-card-${index}`}>
+          <Card key={customer.id} data-testid={`customer-card-${index}`}>
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
                 <Avatar className="h-12 w-12">
@@ -73,17 +93,24 @@ export default function AdminCustomers() {
                 </Avatar>
                 <div className="flex-1 min-w-0 space-y-2">
                   <div>
-                    <h3 className="font-semibold">{customer.name}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold">{customer.name}</h3>
+                      <Badge variant={customer.active ? "default" : "secondary"}>
+                        {customer.active ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       <Mail className="h-3 w-3 text-muted-foreground" />
                       <p className="text-sm text-muted-foreground truncate">{customer.email}</p>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Phone className="h-3 w-3 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">{customer.phone}</p>
-                    </div>
+                    {customer.phone !== 'N/A' && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">{customer.phone}</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3 pt-2 border-t">
+                  <div className="flex items-center gap-3 pt-2 border-t flex-wrap">
                     <div>
                       <p className="text-xs text-muted-foreground">Total Orders</p>
                       <p className="font-bold">{customer.totalOrders}</p>
@@ -92,7 +119,6 @@ export default function AdminCustomers() {
                       <p className="text-xs text-muted-foreground">Total Spent</p>
                       <p className="font-bold">GH₵{customer.totalSpent.toFixed(2)}</p>
                     </div>
-                    <Badge variant="default">Customer</Badge>
                   </div>
                 </div>
               </div>

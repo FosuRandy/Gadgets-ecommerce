@@ -140,6 +140,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/customers", requireRole("super_admin", "vendor", "support_agent"), async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      const customers = users
+        .filter(user => user.role === "customer")
+        .map(({ password, ...user }) => user);
+      res.json(customers);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customers" });
+    }
+  });
+
   // Product routes (protected)
   app.get("/api/products", async (req, res) => {
     try {
