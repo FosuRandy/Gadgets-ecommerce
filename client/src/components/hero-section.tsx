@@ -22,7 +22,7 @@ export function HeroSection() {
               Discover Amazing Products at Unbeatable Prices
             </h1>
             <p className="text-lg md:text-xl text-white/90">
-              Shop the latest electronics, fashion, home goods and more with free shipping on orders over GH₵50
+              Shop the latest electronics and more.
             </p>
             <div className="flex gap-4 flex-wrap">
               <Button
@@ -55,8 +55,8 @@ export function HeroSection() {
                 <Truck className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <div className="font-semibold">Free Shipping</div>
-                <div className="text-sm text-muted-foreground">On orders over GH₵50</div>
+                <div className="font-semibold">Quality Services</div>
+                <div className="text-sm text-muted-foreground">Delivery withing Accra</div>
               </div>
             </div>
             <div className="flex items-center gap-3">

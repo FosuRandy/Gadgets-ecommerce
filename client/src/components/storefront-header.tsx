@@ -14,9 +14,13 @@ export function StorefrontHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2 hover-elevate active-elevate-2 px-2 py-1 rounded-md" data-testid="link-home">
+          <Link
+            href="/"
+            className="flex items-center gap-2 hover-elevate active-elevate-2 px-2 py-1 rounded-md"
+            data-testid="link-home"
+          >
             <Store className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">ShopHub</span>
+            <span className="text-xl font-bold">SMICE GADGETS</span>
           </Link>
 
           <div className="hidden md:flex flex-1 max-w-xl mx-8">
@@ -32,11 +36,17 @@ export function StorefrontHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative" data-testid="button-cart" asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              data-testid="button-cart"
+              asChild
+            >
               <Link href="/cart">
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
-                  <Badge 
+                  <Badge
                     className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
                     data-testid="badge-cart-count"
                   >
@@ -46,11 +56,6 @@ export function StorefrontHeader() {
               </Link>
             </Button>
             <ThemeToggle />
-            <Button variant="outline" size="sm" data-testid="link-admin" asChild>
-              <Link href="/admin">
-                Admin
-              </Link>
-            </Button>
           </div>
         </div>
 
