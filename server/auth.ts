@@ -22,6 +22,10 @@ passport.use(
           return done(null, false, { message: "Account is deactivated" });
         }
 
+        if (!user.password) {
+          return done(null, false, { message: "Invalid email or password" });
+        }
+
         const isValidPassword = await bcrypt.compare(password, user.password);
         
         if (!isValidPassword) {
