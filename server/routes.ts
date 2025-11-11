@@ -142,6 +142,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users/:id/reset-password", requireRole("super_admin"), async (req, res) => {
+    try {
+      const { password } = req.body;
+      if (!password || password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+      const hashedPassword = await hashPassword(password);
+      await storage.updateUser(req.params.id, { password: hashedPassword });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
   app.get("/api/customers", requireRole("super_admin", "vendor", "support_agent"), async (req, res) => {
     try {
       const users = await storage.getUsers();

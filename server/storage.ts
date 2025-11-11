@@ -196,7 +196,6 @@ export class DatabaseStorage implements IStorage {
         storeEmail: "fosurandy0@gmail.com",
         storePhone: "+233 XX XXX XXXX",
         currency: "GHS",
-        taxRate: "0",
         heroTitle: "Discover Amazing Products at Unbeatable Prices",
         heroSubtitle: "Shop the latest electronics and gadgets",
         ...updates,

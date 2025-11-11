@@ -2,9 +2,41 @@
 
 ## Recent Changes (November 11, 2025)
 
-**Migration Completed: SMICE GADGETS E-Commerce Platform**
+**Latest Updates:**
 
-Three critical features have been successfully implemented:
+1. **Customer Phone Number Requirement**
+   - Added phone number field to users table (nullable for existing users, required for new signups)
+   - Updated signup form to require phone number in E.164 format (e.g., +233244444444)
+   - Frontend and backend validation ensures proper phone format
+   - Phone numbers will be used for future OTP/SMS verification features
+
+2. **Password Reset Infrastructure**
+   - Created password_resets table for future forgot password/OTP functionality
+   - Table tracks OTP codes, expiration times, attempt counts, and verification status
+   - Foundation ready for Twilio SMS integration (pending TWILIO_VERIFY_SERVICE_SID)
+
+3. **Admin Password Reset Feature**
+   - Super admins can now reset passwords for vendor and support agent users
+   - Added dedicated "Reset Password" button with key icon in User Management page
+   - Secure endpoint (POST /api/users/:id/reset-password) with super_admin role requirement
+   - Password requirements enforced: minimum 6 characters, bcrypt hashing
+
+4. **Paystack Payment Fixed**
+   - Configured PAYSTACK_SECRET_KEY environment variable
+   - Payment initialization error resolved
+   - Customers can now complete checkout and process payments
+
+5. **Customer List Enhancement**
+   - Created dedicated /api/customers endpoint
+   - Customers now appear in Customers list immediately upon signup (not User Management)
+   - Shows all customer accounts with order statistics and active status
+
+**Twilio Integration Note:**
+- User dismissed Replit's Twilio connector integration
+- Manual Twilio configuration required: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID
+- Once configured, forgot password with SMS OTP can be fully implemented
+
+**Previous Features:**
 
 1. **Authentication System for Customer Access**
    - Created public signup route (POST /api/auth/signup) with automatic customer role assignment

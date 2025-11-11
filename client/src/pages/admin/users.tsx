@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserPlus, Trash2, Edit, Shield } from "lucide-react";
+import { Users, UserPlus, Trash2, Edit, Shield, KeyRound } from "lucide-react";
 
 interface User {
   id: string;
@@ -39,7 +39,9 @@ export default function AdminUsers() {
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   const [formData, setFormData] = useState({
     email: "",
@@ -126,6 +128,32 @@ export default function AdminUsers() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      return await apiRequest(`/api/users/${id}/reset-password`, {
+        method: "POST",
+        body: JSON.stringify({ password }),
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password reset",
+        description: "User password has been reset successfully",
+      });
+      setIsResetPasswordOpen(false);
+      setNewPassword("");
+      setSelectedUser(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to reset password",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!hasRole("super_admin")) {
     return (
       <div className="text-center p-8">
@@ -165,6 +193,24 @@ export default function AdminUsers() {
       role: user.role,
     });
     setIsEditOpen(true);
+  };
+
+  const openResetPasswordDialog = (user: User) => {
+    setSelectedUser(user);
+    setNewPassword("");
+    setIsResetPasswordOpen(true);
+  };
+
+  const handleResetPassword = () => {
+    if (selectedUser && newPassword.length >= 6) {
+      resetPasswordMutation.mutate({ id: selectedUser.id, password: newPassword });
+    } else {
+      toast({
+        title: "Invalid password",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+    }
   };
 
   const getRoleBadge = (role: string) => {
@@ -290,10 +336,18 @@ export default function AdminUsers() {
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     {getRoleBadge(user.role)}
                     {user.id !== currentUser?.id && (
                       <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openResetPasswordDialog(user)}
+                          data-testid={`button-reset-password-${user.id}`}
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -348,16 +402,6 @@ export default function AdminUsers() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-password">New Password (optional)</Label>
-              <Input
-                id="edit-password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Leave blank to keep current password"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="edit-role">Role</Label>
               <Select
                 value={formData.role}
@@ -379,6 +423,38 @@ export default function AdminUsers() {
               disabled={updateMutation.isPending}
             >
               {updateMutation.isPending ? "Updating..." : "Update User"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {selectedUser?.name || 'this user'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-password">New Password</Label>
+              <Input
+                id="reset-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 6 characters)"
+                data-testid="input-reset-password"
+              />
+            </div>
+            <Button
+              onClick={handleResetPassword}
+              className="w-full"
+              disabled={resetPasswordMutation.isPending}
+              data-testid="button-confirm-reset-password"
+            >
+              {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
             </Button>
           </div>
         </DialogContent>
