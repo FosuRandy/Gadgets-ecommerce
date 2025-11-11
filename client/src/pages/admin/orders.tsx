@@ -85,7 +85,6 @@ export default function AdminOrders() {
             <SelectItem value="all">All Orders</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="shipped">Shipped</SelectItem>
             <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
@@ -126,7 +125,6 @@ export default function AdminOrders() {
                       <SelectContent>
                         <SelectItem value="pending">Pending</SelectItem>
                         <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="shipped">Shipped</SelectItem>
                         <SelectItem value="delivered">Delivered</SelectItem>
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
@@ -183,8 +181,8 @@ export default function AdminOrders() {
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-2">Shipping Address</p>
-                <p className="text-sm">{selectedOrder.shippingAddress}</p>
+                <p className="text-sm text-muted-foreground mb-2">Delivery Address</p>
+                <p className="text-sm">{selectedOrder.deliveryAddress}</p>
               </div>
 
               <div>
@@ -206,15 +204,7 @@ export default function AdminOrders() {
               </div>
 
               <div className="border-t pt-4 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>GH₵{parseFloat(selectedOrder.subtotal).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span>GH₵{parseFloat(selectedOrder.shipping).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <span>GH₵{parseFloat(selectedOrder.total).toFixed(2)}</span>
                 </div>

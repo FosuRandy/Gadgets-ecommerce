@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { HeroSection } from "@/components/hero-section";
 import { ProductCard } from "@/components/product-card";
 import { StorefrontHeader } from "@/components/storefront-header";
+import { StorefrontFooter } from "@/components/storefront-footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Product } from "@shared/schema";
@@ -103,6 +104,7 @@ export default function Home() {
           </div>
         )}
       </div>
+      <StorefrontFooter />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { StorefrontHeader } from "@/components/storefront-header";
+import { StorefrontFooter } from "@/components/storefront-footer";
 import { useCart } from "@/lib/cart-context";
 import { Link } from "wouter";
 
@@ -31,9 +32,6 @@ export default function Cart() {
       </div>
     );
   }
-
-  const shipping = totalPrice >= 50 ? 0 : 5.99;
-  const total = totalPrice + shipping;
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,26 +116,9 @@ export default function Cart() {
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium" data-testid="text-subtotal">GH₵{totalPrice.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium" data-testid="text-shipping">
-                    {shipping === 0 ? "FREE" : `GH₵${shipping.toFixed(2)}`}
-                  </span>
-                </div>
-                {totalPrice < 50 && (
-                  <p className="text-sm text-muted-foreground">
-                    Add GH₵{(50 - totalPrice).toFixed(2)} more for free shipping
-                  </p>
-                )}
-                <div className="border-t pt-4">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span data-testid="text-total">GH₵{total.toFixed(2)}</span>
-                  </div>
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Total</span>
+                  <span data-testid="text-total">GH₵{totalPrice.toFixed(2)}</span>
                 </div>
               </CardContent>
               <CardFooter className="flex-col gap-2">
@@ -156,6 +137,7 @@ export default function Cart() {
           </div>
         </div>
       </div>
+      <StorefrontFooter />
     </div>
   );
 }

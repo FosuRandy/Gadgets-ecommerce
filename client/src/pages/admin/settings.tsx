@@ -1,3 +1,6 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -5,13 +8,69 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Store, Globe, DollarSign, Truck } from "lucide-react";
+import { Store, Globe, DollarSign } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { insertSettingsSchema, type Settings } from "@shared/schema";
+import type { z } from "zod";
+
+type SettingsFormData = z.infer<typeof insertSettingsSchema>;
 
 export default function AdminSettings() {
+  const { toast } = useToast();
+
+  const { data: settings } = useQuery<Settings>({
+    queryKey: ["/api/settings"],
+  });
+
+  const form = useForm<SettingsFormData>({
+    resolver: zodResolver(insertSettingsSchema),
+    values: settings ? {
+      storeName: settings.storeName,
+      storeEmail: settings.storeEmail,
+      storePhone: settings.storePhone,
+      currency: settings.currency,
+      taxRate: settings.taxRate,
+      heroTitle: settings.heroTitle,
+      heroSubtitle: settings.heroSubtitle,
+    } : undefined,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: SettingsFormData) => {
+      return await apiRequest("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({
+        title: "Settings updated",
+        description: "Your store settings have been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: SettingsFormData) => {
+    updateMutation.mutate(data);
+  };
+
+  if (!settings) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -19,144 +78,151 @@ export default function AdminSettings() {
         <p className="text-muted-foreground">Configure your store settings</p>
       </div>
 
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Store className="h-5 w-5" />
-              Store Information
-            </CardTitle>
-            <CardDescription>
-              Basic information about your store
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="store-name">Store Name</Label>
-              <Input
-                id="store-name"
-                defaultValue="Smice Gadgets"
-                data-testid="input-store-name"
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Store className="h-5 w-5" />
+                Store Information
+              </CardTitle>
+              <CardDescription>
+                Basic information about your store
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="storeName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Store Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-store-name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="store-email">Contact Email</Label>
-              <Input
-                id="store-email"
-                type="email"
-                defaultValue="support@smicegadgets.com"
-                data-testid="input-store-email"
+              <FormField
+                control={form.control}
+                name="storeEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Email</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" data-testid="input-store-email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="store-phone">Contact Phone</Label>
-              <Input
-                id="store-phone"
-                defaultValue="+1 (555) 123-4567"
-                data-testid="input-store-phone"
+              <FormField
+                control={form.control}
+                name="storePhone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Phone</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-store-phone" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <Button data-testid="button-save-store-info">Save Changes</Button>
-          </CardContent>
-        </Card>
+              <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-store-info">
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Currency & Pricing
-            </CardTitle>
-            <CardDescription>
-              Configure currency and tax settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="currency">Default Currency</Label>
-              <Input
-                id="currency"
-                defaultValue="GHS"
-                data-testid="input-currency"
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Currency & Pricing
+              </CardTitle>
+              <CardDescription>
+                Configure currency and tax settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default Currency</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-currency" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tax-rate"></Label>
-              <Input
-                id="tax-rate"
-                type="number"
-                defaultValue="0"
-                data-testid="input-tax-rate"
+              <FormField
+                control={form.control}
+                name="taxRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Rate (%)</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-tax-rate" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <Button data-testid="button-save-pricing">Save Changes</Button>
-          </CardContent>
-        </Card>
+              <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-pricing">
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
-              Shipping Settings
-            </CardTitle>
-            <CardDescription>
-              Configure shipping options and rates
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="free-shipping">Free Shipping Threshold</Label>
-              <Input
-                id="free-shipping"
-                type="number"
-                defaultValue="50"
-                data-testid="input-free-shipping"
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Website Settings
+              </CardTitle>
+              <CardDescription>
+                Configure website content and appearance
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="heroTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hero Section Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-hero-title" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="shipping-rate">Standard Shipping Rate</Label>
-              <Input
-                id="shipping-rate"
-                type="number"
-                step="0.01"
-                defaultValue="5.99"
-                data-testid="input-shipping-rate"
+              <FormField
+                control={form.control}
+                name="heroSubtitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hero Section Subtitle</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-hero-subtitle" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <Button data-testid="button-save-shipping">Save Changes</Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              Website Settings
-            </CardTitle>
-            <CardDescription>
-              Configure website content and appearance
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="hero-title">Hero Section Title</Label>
-              <Input
-                id="hero-title"
-                defaultValue="Discover Amazing Products at Unbeatable Prices"
-                data-testid="input-hero-title"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="hero-subtitle">Hero Section Subtitle</Label>
-              <Input
-                id="hero-subtitle"
-                defaultValue="Shop the latest electronics, fashion, home goods and more"
-                data-testid="input-hero-subtitle"
-              />
-            </div>
-            <Button data-testid="button-save-website">Save Changes</Button>
-          </CardContent>
-        </Card>
-      </div>
+              <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-website">
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </CardContent>
+          </Card>
+        </form>
+      </Form>
     </div>
   );
 }

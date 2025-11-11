@@ -3,9 +3,10 @@ import type {
   Product, InsertProduct,
   Order, InsertOrder,
   Promotion, InsertPromotion,
+  Settings, InsertSettings,
   AnalyticsData
 } from "@shared/schema";
-import { users, products, orders, promotions } from "@shared/schema";
+import { users, products, orders, promotions, settings } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
 
@@ -32,6 +33,9 @@ export interface IStorage {
   getPromotion(id: string): Promise<Promotion | undefined>;
   createPromotion(promotion: InsertPromotion): Promise<Promotion>;
   deletePromotion(id: string): Promise<void>;
+  
+  getSettings(): Promise<Settings | undefined>;
+  updateSettings(updates: Partial<InsertSettings>): Promise<Settings>;
   
   getAnalytics(): Promise<AnalyticsData>;
 }
@@ -176,6 +180,40 @@ export class DatabaseStorage implements IStorage {
 
   async deletePromotion(id: string): Promise<void> {
     await db.delete(promotions).where(eq(promotions.id, id));
+  }
+
+  async getSettings(): Promise<Settings | undefined> {
+    const [setting] = await db.select().from(settings).limit(1);
+    return setting || undefined;
+  }
+
+  async updateSettings(updates: Partial<InsertSettings>): Promise<Settings> {
+    const [existingSetting] = await db.select().from(settings).limit(1);
+    
+    if (!existingSetting) {
+      const defaultValues: InsertSettings = {
+        storeName: "SMICE GADGETS",
+        storeEmail: "fosurandy0@gmail.com",
+        storePhone: "+233 XX XXX XXXX",
+        currency: "GHS",
+        taxRate: "0",
+        heroTitle: "Discover Amazing Products at Unbeatable Prices",
+        heroSubtitle: "Shop the latest electronics and gadgets",
+        ...updates,
+      };
+      const [newSetting] = await db
+        .insert(settings)
+        .values(defaultValues)
+        .returning();
+      return newSetting;
+    }
+    
+    const [updatedSetting] = await db
+      .update(settings)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(settings.id, existingSetting.id))
+      .returning();
+    return updatedSetting;
   }
 
   async getAnalytics(): Promise<AnalyticsData> {

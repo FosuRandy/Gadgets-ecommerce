@@ -219,6 +219,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/settings", async (req, res) => {
+    try {
+      const settings = await storage.getSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  app.patch("/api/settings", requireRole("super_admin"), async (req, res) => {
+    try {
+      const settings = await storage.updateSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update settings" });
+    }
+  });
+
   app.get("/api/analytics", async (req, res) => {
     try {
       const analytics = await storage.getAnalytics();
@@ -328,8 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           calculatedSubtotal += parseFloat(product.price) * item.quantity;
         }
 
-        const calculatedShipping = calculatedSubtotal >= 50 ? 0 : 5.99;
-        const calculatedTotal = calculatedSubtotal + calculatedShipping;
+        const calculatedTotal = calculatedSubtotal;
 
         if (Math.abs(calculatedTotal - paidAmount) > 0.01) {
           console.error(`Payment amount mismatch: calculated ${calculatedTotal}, paid ${paidAmount}`);
@@ -341,10 +358,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customerName: metadata.customerName,
           customerEmail: verifyData.data.customer.email,
           customerPhone: metadata.customerPhone,
-          shippingAddress: metadata.shippingAddress,
+          deliveryAddress: metadata.deliveryAddress,
           items: metadata.items,
           subtotal: calculatedSubtotal.toFixed(2),
-          shipping: calculatedShipping.toFixed(2),
           total: calculatedTotal.toFixed(2),
           status: "confirmed",
           paymentStatus: "paid",

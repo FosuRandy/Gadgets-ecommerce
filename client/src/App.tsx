@@ -10,6 +10,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
+import FAQs from "@/pages/faqs";
 import AdminLogin from "@/pages/admin/login";
 import { AdminLayout } from "@/pages/admin/layout";
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/cart" component={Cart} />
       <Route path="/checkout" component={Checkout} />
+      <Route path="/faqs" component={FAQs} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin">
         <AdminLayout>

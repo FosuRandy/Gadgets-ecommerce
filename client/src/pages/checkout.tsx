@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { StorefrontHeader } from "@/components/storefront-header";
+import { StorefrontFooter } from "@/components/storefront-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -19,7 +20,7 @@ const checkoutSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters"),
   customerEmail: z.string().email("Invalid email address"),
   customerPhone: z.string().min(10, "Phone number must be at least 10 digits"),
-  shippingAddress: z.string().min(10, "Please enter a complete address"),
+  deliveryAddress: z.string().min(10, "Please enter a complete address"),
 });
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
@@ -36,7 +37,7 @@ export default function Checkout() {
       customerName: "",
       customerEmail: "",
       customerPhone: "",
-      shippingAddress: "",
+      deliveryAddress: "",
     },
   });
 
@@ -50,9 +51,6 @@ export default function Checkout() {
         image: item.product.image,
       }));
 
-      const shipping = totalPrice >= 50 ? 0 : 5.99;
-      const total = totalPrice + shipping;
-
       return apiRequest("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,8 +59,7 @@ export default function Checkout() {
           userId: "guest",
           items: JSON.stringify(orderItems),
           subtotal: totalPrice.toFixed(2),
-          shipping: shipping.toFixed(2),
-          total: total.toFixed(2),
+          total: totalPrice.toFixed(2),
           status: "pending",
           paymentStatus: "pending",
         }),
@@ -86,9 +83,6 @@ export default function Checkout() {
   });
 
   const initializePayment = async (data: CheckoutFormData) => {
-    const shipping = totalPrice >= 50 ? 0 : 5.99;
-    const total = totalPrice + shipping;
-
     const orderItems: OrderItem[] = items.map(item => ({
       productId: item.product.id,
       productName: item.product.name,
@@ -103,15 +97,14 @@ export default function Checkout() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: data.customerEmail,
-          amount: total,
+          amount: Math.round(totalPrice * 100),
           metadata: {
             customerName: data.customerName,
             customerPhone: data.customerPhone,
-            shippingAddress: data.shippingAddress,
+            deliveryAddress: data.deliveryAddress,
             items: JSON.stringify(orderItems),
             subtotal: totalPrice.toFixed(2),
-            shipping: shipping.toFixed(2),
-            total: total.toFixed(2),
+            total: totalPrice.toFixed(2),
           },
         }),
       });
@@ -149,9 +142,6 @@ export default function Checkout() {
     return null;
   }
 
-  const shipping = totalPrice >= 50 ? 0 : 5.99;
-  const total = totalPrice + shipping;
-
   return (
     <div className="min-h-screen bg-background">
       <StorefrontHeader />
@@ -162,7 +152,7 @@ export default function Checkout() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Shipping Information</CardTitle>
+                <CardTitle>Delivery Information</CardTitle>
               </CardHeader>
               <CardContent>
                 <Form {...form}>
@@ -213,10 +203,10 @@ export default function Checkout() {
 
                     <FormField
                       control={form.control}
-                      name="shippingAddress"
+                      name="deliveryAddress"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Shipping Address</FormLabel>
+                          <FormLabel>Delivery Address</FormLabel>
                           <FormControl>
                             <Textarea
                               placeholder="123 Main St, City, State, ZIP"
@@ -268,17 +258,9 @@ export default function Checkout() {
                 </div>
 
                 <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">GH₵{totalPrice.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span className="font-medium">{shipping === 0 ? "FREE" : `GH₵${shipping.toFixed(2)}`}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                  <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span>GH₵{total.toFixed(2)}</span>
+                    <span>GH₵{totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -286,6 +268,7 @@ export default function Checkout() {
           </div>
         </div>
       </div>
+      <StorefrontFooter />
     </div>
   );
 }

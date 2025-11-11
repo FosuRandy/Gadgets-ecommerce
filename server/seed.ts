@@ -1,6 +1,6 @@
 import { storage } from "./storage";
 import { hashPassword } from "./auth";
-import type { InsertProduct, InsertUser } from "@shared/schema";
+import type { InsertProduct, InsertUser, InsertSettings } from "@shared/schema";
 
 const defaultUsers: InsertUser[] = [
   {
@@ -185,6 +185,22 @@ const sampleProducts: InsertProduct[] = [
 export async function seedDatabase() {
   try {
     console.log("Seeding database...");
+    
+    // Seed default settings
+    const existingSettings = await storage.getSettings();
+    if (!existingSettings) {
+      const defaultSettings: InsertSettings = {
+        storeName: "SMICE GADGETS",
+        storeEmail: "fosurandy0@gmail.com",
+        storePhone: "+233 XX XXX XXXX",
+        currency: "GHS",
+        taxRate: "0",
+        heroTitle: "Discover Amazing Products at Unbeatable Prices",
+        heroSubtitle: "Shop the latest electronics and gadgets in Accra",
+      };
+      await storage.updateSettings(defaultSettings);
+      console.log("Seeded default settings");
+    }
     
     // Seed default admin users
     const existingUsers = await storage.getUsers();

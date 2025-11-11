@@ -35,10 +35,9 @@ export const orders = pgTable("orders", {
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone").notNull(),
-  shippingAddress: text("shipping_address").notNull(),
+  deliveryAddress: text("delivery_address").notNull(),
   items: text("items").notNull(), // JSON string
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
-  shipping: decimal("shipping", { precision: 10, scale: 2 }).notNull().default("0"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("pending"),
   paymentStatus: text("payment_status").notNull().default("pending"),
@@ -109,6 +108,25 @@ export interface OrderItem {
   quantity: number;
   image: string;
 }
+
+export const settings = pgTable("settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  storeName: text("store_name").notNull(),
+  storeEmail: text("store_email").notNull(),
+  storePhone: text("store_phone").notNull(),
+  currency: text("currency").notNull().default("GHS"),
+  heroTitle: text("hero_title").notNull(),
+  heroSubtitle: text("hero_subtitle").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSettingsSchema = createInsertSchema(settings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertSettings = z.infer<typeof insertSettingsSchema>;
+export type Settings = typeof settings.$inferSelect;
 
 export interface AnalyticsData {
   totalRevenue: number;
