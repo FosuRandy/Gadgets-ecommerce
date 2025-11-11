@@ -84,6 +84,9 @@ export const insertPromotionSchema = createInsertSchema(promotions).omit({
   id: true,
   createdAt: true,
   usageCount: true,
+}).extend({
+  validFrom: z.coerce.date(),
+  validUntil: z.coerce.date(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -37,6 +37,7 @@ export function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
+                onClick={scrollToProducts}
                 className="bg-white/10 backdrop-blur border-white/30 text-white hover:bg-white/20"
                 data-testid="button-explore"
               >
