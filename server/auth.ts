@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
@@ -26,6 +27,52 @@ passport.use(
         if (!isValidPassword) {
           return done(null, false, { message: "Invalid email or password" });
         }
+
+        return done(null, user);
+      } catch (error) {
+        return done(error);
+      }
+    }
+  )
+);
+
+// Configure passport Google OAuth strategy
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      callbackURL: "/api/auth/google/callback",
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const googleId = profile.id;
+        const email = profile.emails?.[0]?.value;
+        const name = profile.displayName || `${profile.name?.givenName || ''} ${profile.name?.familyName || ''}`.trim();
+
+        if (!email) {
+          return done(new Error("No email found in Google profile"));
+        }
+
+        let user = await storage.getUserByGoogleId(googleId);
+
+        if (user) {
+          return done(null, user);
+        }
+
+        user = await storage.getUserByEmail(email);
+
+        if (user) {
+          user = await storage.updateUser(user.id, { googleId });
+          return done(null, user);
+        }
+
+        user = await storage.createUser({
+          email,
+          googleId,
+          name,
+          role: "customer",
+        });
 
         return done(null, user);
       } catch (error) {

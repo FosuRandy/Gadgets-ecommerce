@@ -96,6 +96,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ user: userWithoutPassword });
   });
 
+  // Google OAuth routes
+  app.get(
+    "/api/auth/google",
+    passport.authenticate("google", { scope: ["profile", "email"] })
+  );
+
+  app.get(
+    "/api/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/login" }),
+    (req: Request, res: Response) => {
+      res.redirect("/");
+    }
+  );
+
   // User management routes (admin only)
   app.get("/api/users", requireRole("super_admin"), async (req, res) => {
     try {
