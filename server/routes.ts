@@ -37,6 +37,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })(req, res, next);
   });
 
+  app.post("/api/auth/signup", async (req: Request, res: Response) => {
+    try {
+      const signupSchema = z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+        name: z.string().min(2),
+      });
+
+      const data = signupSchema.parse(req.body);
+      
+      const existingUser = await storage.getUserByEmail(data.email);
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
+
+      const hashedPassword = await hashPassword(data.password);
+      const user = await storage.createUser({
+        email: data.email,
+        password: hashedPassword,
+        name: data.name,
+        role: "customer",
+        active: true,
+      });
+
+      req.logIn(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Signup successful but login failed" });
+        }
+        const { password, ...userWithoutPassword } = user;
+        return res.json({ user: userWithoutPassword });
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid signup data" });
+      }
+      res.status(500).json({ error: "Failed to create account" });
+    }
+  });
+
   app.post("/api/auth/logout", (req: Request, res: Response) => {
     req.logout((err) => {
       if (err) {
@@ -151,31 +190,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/orders", async (req, res) => {
+  app.get("/api/orders", requireAuth, async (req, res) => {
     try {
-      const orders = await storage.getOrders();
+      const user = req.user as any;
+      let orders;
+      
+      if (user.role === "customer") {
+        orders = await storage.getOrders();
+        orders = orders.filter(order => order.userId === user.id);
+      } else {
+        orders = await storage.getOrders();
+      }
+      
       res.json(orders);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch orders" });
     }
   });
 
-  app.get("/api/orders/:id", async (req, res) => {
+  app.get("/api/orders/:id", requireAuth, async (req, res) => {
     try {
+      const user = req.user as any;
       const order = await storage.getOrder(req.params.id);
+      
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
+      
+      if (user.role === "customer" && order.userId !== user.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       res.json(order);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch order" });
     }
   });
 
-  app.post("/api/orders", async (req, res) => {
+  app.post("/api/orders", requireAuth, async (req, res) => {
     try {
+      const user = req.user as any;
       const data = insertOrderSchema.parse(req.body);
-      const order = await storage.createOrder(data);
+      
+      const order = await storage.createOrder({
+        ...data,
+        userId: user.id,
+      });
+      
       res.json(order);
     } catch (error) {
       res.status(400).json({ error: "Invalid order data" });
@@ -246,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/paystack/initialize", async (req, res) => {
+  app.post("/api/paystack/initialize", requireAuth, async (req, res) => {
     try {
       if (!process.env.PAYSTACK_SECRET_KEY) {
         return res.status(500).json({ error: "Payment system not configured" });
