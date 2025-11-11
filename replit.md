@@ -4,7 +4,19 @@
 
 **Latest Updates:**
 
-1. **Customer Phone Number Requirement**
+1. **Google OAuth Sign-In/Sign-Up**
+   - Integrated Google OAuth 2.0 authentication using Passport.js
+   - Added "Continue with Google" buttons to login and signup pages (always visible)
+   - User schema updated to support Google authentication (googleId field, optional password)
+   - Google-authenticated users are automatically created with customer role
+   - Existing email/password authentication remains fully functional
+   - Protected against password comparison errors for OAuth-only users
+   - Google OAuth routes and strategy conditionally enabled based on credentials
+   - Buttons work automatically once credentials are provided (no additional config needed)
+   - Required environment variables: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+   - Redirect URI: https://02ff2fa0-811e-48e5-998a-84a627415592-00-1krbtedinxp7l.spock.replit.dev/api/auth/google/callback
+
+2. **Customer Phone Number Requirement**
    - Added phone number field to users table (nullable for existing users, required for new signups)
    - Updated signup form to require phone number in E.164 format (e.g., +233244444444)
    - Frontend and backend validation ensures proper phone format
