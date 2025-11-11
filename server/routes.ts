@@ -124,6 +124,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", requireRole("super_admin"), async (req, res) => {
     try {
       const data = insertUserSchema.parse(req.body);
+      if (!data.password) {
+        return res.status(400).json({ error: "Password is required" });
+      }
       const hashedPassword = await hashPassword(data.password);
       const user = await storage.createUser({ ...data, password: hashedPassword });
       const { password, ...userWithoutPassword } = user;

@@ -40,51 +40,53 @@ passport.use(
   )
 );
 
-// Configure passport Google OAuth strategy
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      callbackURL: "/api/auth/google/callback",
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const googleId = profile.id;
-        const email = profile.emails?.[0]?.value;
-        const name = profile.displayName || `${profile.name?.givenName || ''} ${profile.name?.familyName || ''}`.trim();
+// Configure passport Google OAuth strategy (only if credentials are available)
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: "/api/auth/google/callback",
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const googleId = profile.id;
+          const email = profile.emails?.[0]?.value;
+          const name = profile.displayName || `${profile.name?.givenName || ''} ${profile.name?.familyName || ''}`.trim();
 
-        if (!email) {
-          return done(new Error("No email found in Google profile"));
-        }
+          if (!email) {
+            return done(new Error("No email found in Google profile"));
+          }
 
-        let user = await storage.getUserByGoogleId(googleId);
+          let user = await storage.getUserByGoogleId(googleId);
 
-        if (user) {
+          if (user) {
+            return done(null, user);
+          }
+
+          user = await storage.getUserByEmail(email);
+
+          if (user) {
+            user = await storage.updateUser(user.id, { googleId });
+            return done(null, user);
+          }
+
+          user = await storage.createUser({
+            email,
+            googleId,
+            name,
+            role: "customer",
+          });
+
           return done(null, user);
+        } catch (error) {
+          return done(error);
         }
-
-        user = await storage.getUserByEmail(email);
-
-        if (user) {
-          user = await storage.updateUser(user.id, { googleId });
-          return done(null, user);
-        }
-
-        user = await storage.createUser({
-          email,
-          googleId,
-          name,
-          role: "customer",
-        });
-
-        return done(null, user);
-      } catch (error) {
-        return done(error);
       }
-    }
-  )
-);
+    )
+  );
+}
 
 // Serialize user for session
 passport.serializeUser((user: any, done) => {
