@@ -1,14 +1,34 @@
-import { ShoppingCart, Search, Menu, Store } from "lucide-react";
+import { ShoppingCart, Search, Menu, Store, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "./theme-toggle";
 import { Link } from "wouter";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
+import { useSearch } from "@/lib/search-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function StorefrontHeader() {
   const { items } = useCart();
+  const { user, isAuthenticated, logout } = useAuth();
+  const { searchTerm, setSearchTerm } = useSearch();
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -30,6 +50,8 @@ export function StorefrontHeader() {
                 type="search"
                 placeholder="Search products..."
                 className="pl-10"
+                value={searchTerm}
+                onChange={handleSearchChange}
                 data-testid="input-search"
               />
             </div>
@@ -55,6 +77,31 @@ export function StorefrontHeader() {
                 )}
               </Link>
             </Button>
+            
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" data-testid="button-user-menu">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>
+                    {user?.name}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="ghost" asChild data-testid="button-login-nav">
+                <Link href="/login">Login</Link>
+              </Button>
+            )}
+            
             <ThemeToggle />
           </div>
         </div>
@@ -66,6 +113,8 @@ export function StorefrontHeader() {
               type="search"
               placeholder="Search products..."
               className="pl-10"
+              value={searchTerm}
+              onChange={handleSearchChange}
               data-testid="input-search-mobile"
             />
           </div>

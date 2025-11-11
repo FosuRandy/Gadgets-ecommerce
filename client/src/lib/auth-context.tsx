@@ -16,6 +16,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (...roles: string[]) => boolean;
 }
@@ -54,6 +55,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const signupMutation = useMutation({
+    mutationFn: async ({ email, password, name }: { email: string; password: string; name: string }) => {
+      return await apiRequest("/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ email, password, name }),
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+    onSuccess: (data) => {
+      setUser(data.user);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    },
+  });
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("/api/auth/logout", {
@@ -68,6 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     await loginMutation.mutateAsync({ email, password });
+  };
+
+  const signup = async (email: string, password: string, name: string) => {
+    await signupMutation.mutateAsync({ email, password, name });
   };
 
   const logout = async () => {
@@ -85,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         login,
+        signup,
         logout,
         hasRole,
       }}

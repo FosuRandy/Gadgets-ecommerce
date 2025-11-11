@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { OrderItem } from "@shared/schema";
@@ -27,15 +28,27 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login required",
+        description: "Please login to proceed with checkout",
+        variant: "destructive",
+      });
+      setLocation("/login");
+    }
+  }, [isAuthenticated, setLocation, toast]);
+
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      customerName: "",
-      customerEmail: "",
+      customerName: user?.name || "",
+      customerEmail: user?.email || "",
       customerPhone: "",
       deliveryAddress: "",
     },
@@ -56,7 +69,6 @@ export default function Checkout() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          userId: "guest",
           items: JSON.stringify(orderItems),
           subtotal: totalPrice.toFixed(2),
           total: totalPrice.toFixed(2),

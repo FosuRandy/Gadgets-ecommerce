@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Product } from "@shared/schema";
 import { useCart } from "@/lib/cart-context";
+import { useSearch } from "@/lib/search-context";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { clearCart } = useCart();
+  const { searchTerm } = useSearch();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
 
@@ -51,9 +53,15 @@ export default function Home() {
 
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
   
-  const filteredProducts = selectedCategory === "all" 
-    ? products 
-    : products.filter(p => p.category === selectedCategory);
+  const filteredProducts = products
+    .filter(p => {
+      const matchesCategory = selectedCategory === "all" || p.category === selectedCategory;
+      const matchesSearch = !searchTerm || 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,7 +102,11 @@ export default function Home() {
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No products found in this category</p>
+            <p className="text-muted-foreground text-lg">
+              {searchTerm 
+                ? `No products found matching "${searchTerm}"` 
+                : "No products found in this category"}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">

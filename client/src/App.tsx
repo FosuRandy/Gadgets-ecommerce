@@ -6,11 +6,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
+import { SearchProvider } from "@/lib/search-context";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
 import FAQs from "@/pages/faqs";
+import Login from "@/pages/login";
+import Signup from "@/pages/signup";
 import AdminLogin from "@/pages/admin/login";
 import { AdminLayout } from "@/pages/admin/layout";
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -29,6 +32,8 @@ function Router() {
       <Route path="/cart" component={Cart} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/faqs" component={FAQs} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin">
         <AdminLayout>
@@ -81,10 +86,12 @@ export default function App() {
       <TooltipProvider>
         <ThemeProvider>
           <AuthProvider>
-            <CartProvider>
-              <Toaster />
-              <Router />
-            </CartProvider>
+            <SearchProvider>
+              <CartProvider>
+                <Toaster />
+                <Router />
+              </CartProvider>
+            </SearchProvider>
           </AuthProvider>
         </ThemeProvider>
       </TooltipProvider>
